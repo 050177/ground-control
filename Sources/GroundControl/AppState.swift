@@ -1,0 +1,271 @@
+import AppKit
+import Foundation
+import GCCore
+
+struct ChatterLine: Identifiable {
+    let id = UUID()
+    let text: String
+}
+
+/// Root app state: terminal panes, selection, the board, the chatter ticker.
+@MainActor
+final class AppState: ObservableObject {
+    @Published var panes: [PaneModel] = []
+    @Published var selectedPaneId: UUID?
+    @Published var board: Board
+    @Published var boardVisible = true
+    @Published var tutorialVisible = false
+    @Published var chatter: [ChatterLine] = []
+
+    let boardStore: BoardStore
+    let recentProjects: RecentProjectsStore
+    private let hookServer: HookServer
+
+    /// Last directory chosen — new terminals open next to the previous one.
+    private var lastDirectory: String = NSHomeDirectory()
+    /// Monotonic terminal counter: T1, T2, … never reused within a run.
+    private var nextTerminalNumber = 1
+
+    init() {
+        let store = BoardStore()
+        boardStore = store
+        board = store.board
+        recentProjects = RecentProjectsStore()
+        hookServer = HookServer(board: store)
+        hookServer.onHook = { [weak self] event in self?.handleHook(event) }
+        hookServer.onBoardChanged = { [weak self] newBoard in self?.board = newBoard }
+        do {
+            try hookServer.start()
+        } catch {
+            appendChatter("GC · hook server failed to start — no status radar")
+        }
+        Notify.requestAuthorization()
+        startGitPolling()
+    }
+
+    // MARK: - Terminals
+
+    /// Prompt for a project directory, then add a terminal there.
+    func addTerminalPrompt() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Open Project"
+        panel.message = "Choose a project directory for this terminal"
+        panel.directoryURL = URL(fileURLWithPath: lastDirectory)
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        addTerminal(directory: url.path)
+    }
+
+    @discardableResult
+    func addTerminal(directory: String, resumeSessionId: String? = nil) -> PaneModel? {
+        guard let server = hookServer.config else {
+            appendChatter("GC · hook server not ready — try again in a moment")
+            return nil
+        }
+        // Record open; if caller didn't pass a specific session, use last known.
+        let knownSession = recentProjects.didOpen(path: directory)
+        let sessionToResume = resumeSessionId ?? knownSession
+
+        let pane = PaneModel(
+            label: "T\(nextTerminalNumber)",
+            cwd: directory,
+            server: server,
+            resumeSessionId: sessionToResume
+        )
+        nextTerminalNumber += 1
+        lastDirectory = directory
+        panes.append(pane)
+        selectedPaneId = pane.id
+        if let sid = sessionToResume {
+            appendChatter("\(pane.label) · resuming session \(String(sid.prefix(8)))…")
+        } else {
+            appendChatter("\(pane.label) · terminal open — \(abbreviate(directory))")
+        }
+        return pane
+    }
+
+    /// Open a recent project — passes its stored session ID for resume automatically.
+    func openRecent(_ project: RecentProject) {
+        addTerminal(directory: project.path, resumeSessionId: project.lastSessionId)
+    }
+
+    func removeTerminal(_ id: UUID) {
+        guard let index = panes.firstIndex(where: { $0.id == id }) else { return }
+        let pane = panes[index]
+        pane.terminate()
+        panes.remove(at: index)
+        appendChatter("\(pane.label) · terminal closed")
+        if selectedPaneId == id {
+            selectedPaneId = panes.last?.id
+        }
+    }
+
+    func shutdown() {
+        for pane in panes {
+            pane.terminate()
+        }
+        hookServer.stop()
+    }
+
+    // MARK: - Board
+
+    func toggleBoard() {
+        boardVisible.toggle()
+    }
+
+    func showTutorial() {
+        tutorialVisible = true
+    }
+
+    /// File a flight plan from the board's input row (same process — no HTTP hop).
+    func removeFlight(id: UUID) {
+        boardStore.update { board in
+            board.flights.removeAll { $0.id == id }
+        }
+        board = boardStore.board
+    }
+
+    /// Auto-file or update the active flight for a pane from a UserPromptSubmit message.
+    private func autoFileFlight(pane: PaneModel, message: String?) {
+        let title: String
+        if let msg = message?.trimmingCharacters(in: .whitespacesAndNewlines), !msg.isEmpty {
+            // Truncate long prompts to a readable label.
+            title = msg.count > 72 ? String(msg.prefix(69)) + "…" : msg
+        } else {
+            title = "Working…"
+        }
+
+        // If the pane already has an active (non-terminal) flight, update it.
+        // Otherwise create a new one.
+        var number = 0
+        boardStore.update { board in
+            if let idx = board.flights.firstIndex(where: {
+                $0.assignedPane == pane.label &&
+                $0.status != .landed && $0.status != .cancelled
+            }) {
+                board.flights[idx].title = title
+                board.flights[idx].status = .departed
+                board.flights[idx].sessionId = pane.sessionId.uuidString
+                board.flights[idx].updatedAt = Date()
+                number = board.flights[idx].number
+            } else {
+                number = board.nextFlightNumber
+                board.flights.append(Flight(
+                    number: number,
+                    title: title,
+                    status: .departed,
+                    assignedPane: pane.label,
+                    sessionId: pane.sessionId.uuidString,
+                    projectPath: pane.cwd
+                ))
+                board.nextFlightNumber += 1
+            }
+        }
+        board = boardStore.board
+        appendChatter("\(pane.label) · #\(String(format: "%02d", number)) DEPARTED — \(title.prefix(40))")
+    }
+
+    /// Land the active flight for a pane when the agent finishes its turn.
+    private func landActiveFlight(pane: PaneModel) {
+        boardStore.update { board in
+            for idx in board.flights.indices {
+                if board.flights[idx].assignedPane == pane.label &&
+                   (board.flights[idx].status == .departed || board.flights[idx].status == .holding) {
+                    board.flights[idx].status = .landed
+                    board.flights[idx].updatedAt = Date()
+                }
+            }
+        }
+        board = boardStore.board
+    }
+
+    private func holdActiveFlight(pane: PaneModel) {
+        boardStore.update { board in
+            for idx in board.flights.indices {
+                if board.flights[idx].assignedPane == pane.label &&
+                   board.flights[idx].status == .departed {
+                    board.flights[idx].status = .holding
+                    board.flights[idx].updatedAt = Date()
+                }
+            }
+        }
+        board = boardStore.board
+    }
+
+    func focusPane(label: String) {
+        guard let pane = panes.first(where: { $0.label == label }) else { return }
+        selectedPaneId = pane.id
+        appendChatter("\(label) · on frequency")
+    }
+
+    // MARK: - Chatter
+
+    func appendChatter(_ text: String) {
+        chatter.append(ChatterLine(text: text))
+        if chatter.count > 100 {
+            chatter.removeFirst(chatter.count - 100)
+        }
+    }
+
+    // MARK: - Private
+
+
+    private func startGitPolling() {
+        Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.panes.forEach { $0.refreshGit() }
+            }
+        }.fire()
+    }
+
+    private func handleHook(_ event: HookEvent) {
+        guard let pane = panes.first(where: {
+            $0.sessionId.uuidString.lowercased() == event.sessionId.lowercased()
+        }) else {
+            return
+        }
+        switch event.event {
+        case "SessionStart":
+            pane.state = .standby
+            recentProjects.didStartSession(path: pane.cwd, sessionId: event.sessionId)
+            appendChatter("\(pane.label) · session on the tarmac")
+        case "UserPromptSubmit":
+            pane.state = .departed
+            autoFileFlight(pane: pane, message: event.message)
+            // transcript_path filename is the definitive resume UUID — use it if present
+            if let tp = event.transcriptPath {
+                let resumeId = URL(fileURLWithPath: tp).deletingPathExtension().lastPathComponent
+                if !resumeId.isEmpty {
+                    recentProjects.didStartSession(path: pane.cwd, sessionId: resumeId)
+                }
+            }
+        case "PermissionRequest":
+            pane.state = .holding
+            holdActiveFlight(pane: pane)
+            appendChatter("\(pane.label) · HOLDING — awaiting clearance")
+            Notify.post(title: "\(pane.label) is holding", body: "Agent needs clearance to continue.")
+        case "Notification":
+            pane.state = .holding
+            holdActiveFlight(pane: pane)
+            appendChatter("\(pane.label) · HOLDING — needs input")
+            Notify.post(title: "\(pane.label) is holding", body: "Agent needs your input.")
+        case "Stop":
+            pane.state = .landed
+            landActiveFlight(pane: pane)
+            appendChatter("\(pane.label) · LANDED")
+            Notify.post(title: "\(pane.label) landed", body: "Agent finished its turn.")
+        case "SessionEnd":
+            pane.state = .dark
+            appendChatter("\(pane.label) · DARK — session ended")
+        default:
+            break
+        }
+    }
+
+    private func abbreviate(_ path: String) -> String {
+        let home = NSHomeDirectory()
+        return path.hasPrefix(home) ? "~" + path.dropFirst(home.count) : path
+    }
+}

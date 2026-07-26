@@ -1,0 +1,11 @@
+.build/
+build/
+.claude/
+*.o
+*.d
+*.swp
+.DS_Store
+/tmp/
+xcuserdata/
+*.xcodeproj/
+DerivedData/

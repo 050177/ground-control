@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Allow access to user-selected files and directories (via NSOpenPanel). -->
+    <!-- Combined with NSDocumentsFolderUsageDescription this gives TCC enough   -->
+    <!-- context to remember the user's permission decision by bundle ID.        -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+</dict>
+</plist>
