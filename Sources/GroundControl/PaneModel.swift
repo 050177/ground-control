@@ -50,15 +50,6 @@ final class PaneModel: ObservableObject, Identifiable {
     }
 
     private func start(_ view: LocalProcessTerminalView) {
-        // When resuming, reuse the stored session UUID as --session-id too.
-        // Passing a *new* --session-id alongside --resume causes claude to start
-        // a fresh session (the two IDs conflict). Same value = unambiguous resume.
-        if let resumeId = resumeSessionId, let existingUUID = UUID(uuidString: resumeId) {
-            sessionId = existingUUID
-        } else {
-            sessionId = UUID()
-        }
-
         guard let claude = claudePath else {
             view.feed(text: "GROUND CONTROL: claude CLI not found on PATH.\r\n")
             view.startProcess(
@@ -71,11 +62,18 @@ final class PaneModel: ObservableObject, Identifiable {
             return
         }
 
-        var args = ["--session-id", sessionId.uuidString]
-
-        if resumeSessionId != nil {
-            args += ["--resume", sessionId.uuidString]
-            resumeSessionId = nil  // only on first start; manual restart begins fresh
+        // CLI changed: --session-id cannot be combined with --resume unless
+        // --fork-session is also passed. Solution: resume-only uses just --resume
+        // (claude fires hooks with the original session UUID); new sessions get
+        // --session-id so hooks still map 1:1 to this pane.
+        var args: [String]
+        if let resumeId = resumeSessionId, let existingUUID = UUID(uuidString: resumeId) {
+            sessionId = existingUUID   // hooks arrive with this UUID — keep them routing here
+            args = ["--resume", resumeId]
+            resumeSessionId = nil      // only on first start; manual restart begins fresh
+        } else {
+            sessionId = UUID()
+            args = ["--session-id", sessionId.uuidString]
         }
 
         do {
