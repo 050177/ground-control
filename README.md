@@ -1,6 +1,6 @@
 # Ground Control
 
-*Your agents are cleared for takeoff.*
+*Your agents are cleared for takeoff.* &nbsp;[Discord](https://discord.gg/RygfdCZEm)
 
 A native macOS app that runs multiple [Claude Code](https://claude.ai/code) sessions
 in parallel, watches each one on a live status radar, and auto-tracks what every agent
