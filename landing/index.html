@@ -935,6 +935,77 @@
 
     .footer-links a:hover { color: var(--muted); }
 
+    /* ── Donate ──────────────────────────────────── */
+    #donate { padding: 80px 40px; }
+
+    .donate-wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .donate-h2 { margin-bottom: 16px; }
+
+    .donate-sub {
+      color: var(--muted);
+      font-size: 16px;
+      margin-bottom: 40px;
+      line-height: 1.7;
+    }
+
+    .donate-addrs {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .donate-addr-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 18px;
+    }
+
+    .donate-chain {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--amber);
+      letter-spacing: .08em;
+      min-width: 34px;
+    }
+
+    .donate-addr {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: left;
+    }
+
+    .copy-addr-btn {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--line2);
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+      flex-shrink: 0;
+    }
+
+    .copy-addr-btn:hover { color: var(--green); border-color: var(--green); }
+
     /* ── Responsive ──────────────────────────────── */
     @media (max-width: 860px) {
       nav { padding: 0 20px; }
@@ -970,6 +1041,7 @@
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#install">Install</a></li>
     <li><a href="#about">About</a></li>
+    <li><a href="#donate">Support</a></li>
   </ul>
   <a class="nav-download" href="#install">Download</a>
 </nav>
@@ -1327,7 +1399,8 @@
       <div class="phase-body">
         <ul class="phase-items">
           <li>Restore open terminals on launch</li>
-          <li>Session history per project</li>
+          <li>Searchable session history per project</li>
+          <li>Export session as markdown</li>
         </ul>
       </div>
     </details>
@@ -1336,6 +1409,26 @@
       <summary>
         <div class="phase-left">
           <span class="phase-ver">v0.4</span>
+          <span class="phase-title">Vision</span>
+        </div>
+        <div class="phase-right">
+          <span class="phase-badge ph-planned">PLANNED</span>
+          <span class="ph-arrow">&#9654;</span>
+        </div>
+      </summary>
+      <div class="phase-body">
+        <ul class="phase-items">
+          <li>Real-time diff viewer — watch agents edit files live</li>
+          <li>Screenshot diff for frontend work</li>
+          <li>Token and cost tracker per session</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="phase">
+      <summary>
+        <div class="phase-left">
+          <span class="phase-ver">v0.5</span>
           <span class="phase-title">Agent Zoo</span>
         </div>
         <div class="phase-right">
@@ -1345,8 +1438,9 @@
       </summary>
       <div class="phase-body">
         <ul class="phase-items">
-          <li>Other agents (Codex, Gemini, aider)</li>
-          <li>Turbo mode</li>
+          <li>Other agents — Codex, Gemini CLI, aider, OpenCode</li>
+          <li>Turbo mode — auto-approve routine permissions</li>
+          <li>Per-project system prompt templates</li>
         </ul>
       </div>
     </details>
@@ -1354,7 +1448,27 @@
     <details class="phase">
       <summary>
         <div class="phase-left">
-          <span class="phase-ver">v0.5</span>
+          <span class="phase-ver">v0.6</span>
+          <span class="phase-title">Connections</span>
+        </div>
+        <div class="phase-right">
+          <span class="phase-badge ph-planned">PLANNED</span>
+          <span class="ph-arrow">&#9654;</span>
+        </div>
+      </summary>
+      <div class="phase-body">
+        <ul class="phase-items">
+          <li>One-click MCP integrations — GitHub, Supabase, Notion, Slack</li>
+          <li>Webhook triggers — CI failure or PR comment starts an agent</li>
+          <li>Shared context between panes</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="phase">
+      <summary>
+        <div class="phase-left">
+          <span class="phase-ver">v0.7</span>
           <span class="phase-title">Autonomy</span>
         </div>
         <div class="phase-right">
@@ -1364,7 +1478,9 @@
       </summary>
       <div class="phase-body">
         <ul class="phase-items">
-          <li>Autonomous dispatcher</li>
+          <li>Autonomous dispatcher — one agent spawns and coordinates others</li>
+          <li>Agents claim flights from the board and self-assign to panes</li>
+          <li>Session replay — rewind and watch what an agent did</li>
         </ul>
       </div>
     </details>
@@ -1400,6 +1516,31 @@
 
 <div class="divider"></div>
 
+<!-- ─── Donate ────────────────────────────────────────────────── -->
+<section id="donate">
+  <div class="container">
+    <div class="donate-wrap">
+      <div class="eyebrow">Support</div>
+      <h2 class="donate-h2">Built for free. Kept that way.</h2>
+      <p class="donate-sub">Ground Control is open source and costs nothing. If it saves you time, throwing a few dollars at it is a nice thing to do — but no pressure.</p>
+      <div class="donate-addrs">
+        <div class="donate-addr-row">
+          <span class="donate-chain">ETH</span>
+          <code class="donate-addr" id="eth-addr">0xf262639B3c4EA43ABE1675Ea7b536bFAe91E856d</code>
+          <button class="copy-addr-btn" onclick="copyAddr('eth-addr',this)">COPY</button>
+        </div>
+        <div class="donate-addr-row">
+          <span class="donate-chain">BTC</span>
+          <code class="donate-addr" id="btc-addr">13RxWvBxkPRzNaSNfUcjM9P3fviSgA2nQG</code>
+          <button class="copy-addr-btn" onclick="copyAddr('btc-addr',this)">COPY</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
 <!-- ─── CTA ───────────────────────────────────────────────────── -->
 <section class="cta-section">
   <div class="cta-glow"></div>
@@ -1421,6 +1562,7 @@
       <li><a href="#how">How it works</a></li>
       <li><a href="#roadmap">Roadmap</a></li>
       <li><a href="#install">Install</a></li>
+      <li><a href="#donate">Support</a></li>
       <li><a href="https://github.com/050177/ground-control">GitHub</a></li>
     </ul>
   </div>
@@ -1432,6 +1574,14 @@
     var text = el.innerText || el.textContent;
     navigator.clipboard.writeText(text).then(function() {
       var btn = document.getElementById('copy-btn');
+      btn.textContent = 'COPIED';
+      setTimeout(function() { btn.textContent = 'COPY'; }, 2000);
+    });
+  }
+
+  function copyAddr(id, btn) {
+    var text = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(text).then(function() {
       btn.textContent = 'COPIED';
       setTimeout(function() { btn.textContent = 'COPY'; }, 2000);
     });

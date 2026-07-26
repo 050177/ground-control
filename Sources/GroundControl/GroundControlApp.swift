@@ -38,6 +38,18 @@ struct GroundControlApp: App {
                 }
                 .keyboardShortcut("q", modifiers: .command)
             }
+            CommandGroup(replacing: .help) {
+                Button("Ground Control Website") {
+                    NSWorkspace.shared.open(URL(string: "https://050177.github.io/ground-control")!)
+                }
+                Button("Support This Project") {
+                    NSWorkspace.shared.open(URL(string: "https://050177.github.io/ground-control/#donate")!)
+                }
+                Divider()
+                Button("View on GitHub") {
+                    NSWorkspace.shared.open(URL(string: "https://github.com/050177/ground-control")!)
+                }
+            }
         }
     }
 }

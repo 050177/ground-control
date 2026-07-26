@@ -137,15 +137,15 @@ cleaned up on quit. Nothing touches your project.
 
 ## Roadmap
 
-See the full roadmap at [050177.com/ground-control](https://050177.com/ground-control).
-
 | Version | Status | What's in it |
 |---|---|---|
 | v0.1 | ✓ shipped | Single terminal, hooks, departures board + MCP |
 | v0.2 | in progress | Resume, recent projects, auto-filed departures |
-| v0.3 | planned | Restore terminals on launch, session history |
-| v0.4 | planned | Other agents (Codex, Gemini, aider), turbo mode |
-| v0.5 | planned | Autonomous dispatcher |
+| v0.3 | planned | Restore sessions on launch, history search, export |
+| v0.4 | planned | Real-time diffs, screenshot diff, token cost tracker |
+| v0.5 | planned | Codex/Gemini/aider support, turbo mode, prompt templates |
+| v0.6 | planned | MCP marketplace, webhook triggers, shared pane context |
+| v0.7 | planned | Autonomous dispatcher — agents spawn and coordinate agents |
 
 ## License
 
