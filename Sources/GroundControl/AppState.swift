@@ -247,10 +247,9 @@ final class AppState: ObservableObject {
             appendChatter("\(pane.label) · HOLDING — awaiting clearance")
             Notify.post(title: "\(pane.label) is holding", body: "Agent needs clearance to continue.")
         case "Notification":
-            pane.state = .holding
-            holdActiveFlight(pane: pane)
-            appendChatter("\(pane.label) · HOLDING — needs input")
-            Notify.post(title: "\(pane.label) is holding", body: "Agent needs your input.")
+            // Informational only — Claude fires these for progress updates, "accept edits on",
+            // extended thinking status, etc. Does NOT mean the agent is waiting for user input.
+            appendChatter("\(pane.label) · notification")
         case "Stop":
             pane.state = .landed
             landActiveFlight(pane: pane)
