@@ -11,7 +11,7 @@ echo "▸ Building ($CONFIG)…"
 swift build -c "$CONFIG"
 BIN_DIR="$(swift build -c "$CONFIG" --show-bin-path)"
 
-echo "▸ Assembling $APP…"
+echo "▸ Assembling ${APP}..."
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/GroundControl" "$APP/Contents/MacOS/GroundControl"
