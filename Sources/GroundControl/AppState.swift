@@ -107,9 +107,12 @@ final class AppState: ObservableObject {
         addTerminal(directory: project.path, resumeSessionId: project.lastSessionId)
     }
 
-    /// Fork a pane — opens a fresh agent in the same directory without prompting.
-    func splitPane(_ pane: PaneModel) {
-        addTerminal(directory: pane.cwd)
+    /// Fork a pane — opens a fresh agent in the same directory with an optional task.
+    func splitPane(_ pane: PaneModel, task: String = "") {
+        guard let newPane = addTerminal(directory: pane.cwd) else { return }
+        if !task.isEmpty {
+            newPane.pendingTask = task
+        }
     }
 
     func removeTerminal(_ id: UUID) {
@@ -291,6 +294,13 @@ final class AppState: ObservableObject {
             pane.state = .standby
             recentProjects.didStartSession(path: pane.cwd, sessionId: event.sessionId)
             appendChatter("\(pane.label) · session on the tarmac")
+            if let task = pane.pendingTask, !task.isEmpty {
+                pane.pendingTask = nil
+                // Delay to let claude render its welcome screen before we send input.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak pane] in
+                    pane?.sendInput(task + "\n")
+                }
+            }
         case "UserPromptSubmit":
             pane.state = .departed
             autoFileFlight(pane: pane, message: event.message)

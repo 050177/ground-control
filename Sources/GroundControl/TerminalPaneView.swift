@@ -18,8 +18,10 @@ struct TerminalPaneView: View {
     @ObservedObject var pane: PaneModel
     let isSelected: Bool
     let onSelect: () -> Void
-    let onSplit: () -> Void
+    let onSplit: (String) -> Void
     let onClose: () -> Void
+    @State private var showSplitInput = false
+    @State private var splitTask = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -54,11 +56,20 @@ struct TerminalPaneView: View {
                 .foregroundStyle(Theme.dim)
                 .lineLimit(1)
                 .truncationMode(.head)
-            Button(action: onSplit) {
+            Button(action: { showSplitInput.toggle() }) {
                 Image(systemName: "rectangle.split.2x1")
+                    .foregroundStyle(showSplitInput ? Theme.radar : Theme.dim)
             }
             .buttonStyle(TitleBarButtonStyle())
-            .help("Split — open another agent in this folder")
+            .help("Deploy sub-agent in this folder")
+            .popover(isPresented: $showSplitInput, arrowEdge: .bottom) {
+                SplitTaskPopover(task: $splitTask) {
+                    let t = splitTask
+                    splitTask = ""
+                    showSplitInput = false
+                    onSplit(t)
+                }
+            }
             Button(action: { pane.restart() }) {
                 Image(systemName: "arrow.clockwise")
             }
@@ -123,6 +134,39 @@ struct BeaconView: View {
         case .dark: return Theme.dim.opacity(0.5)
         case .noContact: return Theme.red
         }
+    }
+}
+
+// MARK: - Sub-agent deploy popover
+
+private struct SplitTaskPopover: View {
+    @Binding var task: String
+    let onDeploy: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("DEPLOY SUB-AGENT")
+                .font(Theme.mono(9, weight: .bold))
+                .foregroundStyle(Theme.dim)
+
+            TextField("What should this agent work on?", text: $task)
+                .font(Theme.mono(11))
+                .foregroundStyle(Theme.landed)
+                .textFieldStyle(.plain)
+                .frame(width: 280)
+                .onSubmit(onDeploy)
+
+            HStack {
+                Spacer()
+                Button("Deploy") { onDeploy() }
+                    .buttonStyle(.plain)
+                    .font(Theme.mono(10, weight: .bold))
+                    .foregroundStyle(task.isEmpty ? Theme.dim : Theme.radar)
+                    .disabled(task.isEmpty)
+            }
+        }
+        .padding(14)
+        .background(Theme.panel)
     }
 }
 

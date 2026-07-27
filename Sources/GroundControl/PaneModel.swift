@@ -22,6 +22,8 @@ final class PaneModel: ObservableObject, Identifiable {
     /// If set, claude is launched with --resume so the conversation continues.
     /// Cleared after first use so a manual restart starts fresh.
     private var resumeSessionId: String?
+    /// If set, sent as the first prompt once the session starts.
+    var pendingTask: String?
     private var terminalView: LocalProcessTerminalView?
     private var claudePath: String?
 
@@ -96,6 +98,11 @@ final class PaneModel: ObservableObject, Identifiable {
             currentDirectory: cwd
         )
         state = .standby
+    }
+
+    /// Type text into the terminal as if the user typed it (writes to stdin).
+    func sendInput(_ text: String) {
+        terminalView?.send(txt: text)
     }
 
     /// Kill and relaunch the process in the same view.
