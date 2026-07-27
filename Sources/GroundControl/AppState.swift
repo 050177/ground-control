@@ -27,8 +27,15 @@ final class AppState: ObservableObject {
 
     /// Last directory chosen — new terminals open next to the previous one.
     private var lastDirectory: String = NSHomeDirectory()
-    /// Monotonic terminal counter: T1, T2, … never reused within a run.
-    private var nextTerminalNumber = 1
+
+    /// Lowest T-number not currently in use, so closed slots are reclaimed:
+    /// close T1, reopen same folder → T1 again rather than T3.
+    private var nextAvailableNumber: Int {
+        let used = Set(panes.compactMap { Int($0.label.dropFirst()) })
+        var n = 1
+        while used.contains(n) { n += 1 }
+        return n
+    }
 
     private static var lastSessionURL: URL {
         ServerConfig.appSupportDirectory.appendingPathComponent("last-session.json")
@@ -79,12 +86,11 @@ final class AppState: ObservableObject {
         let sessionToResume = resumeSessionId ?? knownSession
 
         let pane = PaneModel(
-            label: "T\(nextTerminalNumber)",
+            label: "T\(nextAvailableNumber)",
             cwd: directory,
             server: server,
             resumeSessionId: sessionToResume
         )
-        nextTerminalNumber += 1
         lastDirectory = directory
         panes.append(pane)
         selectedPaneId = pane.id

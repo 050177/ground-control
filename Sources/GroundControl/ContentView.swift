@@ -1,9 +1,10 @@
+import GCCore
 import SwiftUI
 
 /// Root layout: ops toolbar on top, terminal grid filling the window.
-/// (Chatter ticker arrives in Phase 2, departures board in Phase 3.)
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
+    @State private var showRecents = false
 
     var body: some View {
         ZStack {
@@ -39,6 +40,27 @@ struct ContentView: View {
             Text("\(appState.panes.count) TERMINAL\(appState.panes.count == 1 ? "" : "S")")
                 .font(Theme.mono(10))
                 .foregroundStyle(Theme.dim)
+            if !appState.recentProjects.projects.isEmpty {
+                Button(action: { showRecents.toggle() }) {
+                    Text("RECENTS")
+                        .font(Theme.mono(10, weight: .bold))
+                        .foregroundStyle(showRecents ? Theme.landed : Theme.dim)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 3)
+                                .strokeBorder(Theme.hairline, lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showRecents, arrowEdge: .bottom) {
+                    RecentsPopover(onOpen: { project in
+                        showRecents = false
+                        appState.openRecent(project)
+                    })
+                    .environmentObject(appState)
+                }
+            }
             Button(action: { appState.toggleBoard() }) {
                 Text("DEPARTURES")
                     .font(Theme.mono(10, weight: .bold))
@@ -95,5 +117,75 @@ struct ContentView: View {
         .overlay(alignment: .bottom) {
             Rectangle().fill(Theme.hairline).frame(height: 1)
         }
+    }
+}
+
+// MARK: - Recents popover
+
+private struct RecentsPopover: View {
+    @EnvironmentObject var appState: AppState
+    let onOpen: (RecentProject) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("RECENT PROJECTS")
+                .font(Theme.mono(9, weight: .bold))
+                .foregroundStyle(Theme.dim)
+                .padding(.horizontal, 14)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+
+            Divider().background(Theme.hairline)
+
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(appState.recentProjects.projects) { project in
+                        Button(action: { onOpen(project) }) {
+                            HStack(spacing: 10) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(project.displayName)
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundStyle(Theme.landed)
+                                    Text(project.abbreviatedPath)
+                                        .font(Theme.mono(9))
+                                        .foregroundStyle(Theme.dim)
+                                }
+                                Spacer()
+                                if project.lastSessionId != nil {
+                                    Text("resume")
+                                        .font(Theme.mono(9, weight: .bold))
+                                        .foregroundStyle(Theme.radar)
+                                }
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 9)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        Divider().background(Theme.hairline)
+                    }
+                }
+            }
+            .frame(maxHeight: 320)
+
+            Button(action: {
+                appState.addTerminalPrompt()
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "folder")
+                        .font(.system(size: 10))
+                    Text("Browse…")
+                        .font(Theme.mono(10))
+                }
+                .foregroundStyle(Theme.dim)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(width: 280)
+        .background(Theme.panel)
     }
 }
