@@ -76,7 +76,8 @@ final class AppState: ObservableObject {
     }
 
     @discardableResult
-    func addTerminal(directory: String, resumeSessionId: String? = nil, fresh: Bool = false) -> PaneModel? {
+    func addTerminal(directory: String, resumeSessionId: String? = nil,
+                     fresh: Bool = false, forkFromSessionId: String? = nil) -> PaneModel? {
         guard let server = hookServer.config else {
             appendChatter("GC · hook server not ready — try again in a moment")
             return nil
@@ -89,7 +90,8 @@ final class AppState: ObservableObject {
             label: "T\(nextAvailableNumber)",
             cwd: directory,
             server: server,
-            resumeSessionId: sessionToResume
+            resumeSessionId: sessionToResume,
+            forkFromSessionId: forkFromSessionId
         )
         lastDirectory = directory
         panes.append(pane)
@@ -107,9 +109,15 @@ final class AppState: ObservableObject {
         addTerminal(directory: project.path, resumeSessionId: project.lastSessionId)
     }
 
-    /// Fork a pane — always a new session in the same directory (never resumes).
+    /// Fork a pane — new session in the same directory branched from the parent's
+    /// conversation history so the sub-agent has full context of what T2 was doing.
     func splitPane(_ pane: PaneModel, task: String = "") {
-        guard let newPane = addTerminal(directory: pane.cwd, fresh: true) else { return }
+        let parentSessionId = pane.sessionId.uuidString
+        guard let newPane = addTerminal(
+            directory: pane.cwd,
+            fresh: true,
+            forkFromSessionId: parentSessionId
+        ) else { return }
         if !task.isEmpty {
             newPane.pendingTask = task
         }

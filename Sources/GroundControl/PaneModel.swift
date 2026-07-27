@@ -22,18 +22,23 @@ final class PaneModel: ObservableObject, Identifiable {
     /// If set, claude is launched with --resume so the conversation continues.
     /// Cleared after first use so a manual restart starts fresh.
     private var resumeSessionId: String?
+    /// If set, claude is launched with --resume <id> --fork-session to branch
+    /// from a parent session, giving the sub-agent full context of the parent.
+    private var forkFromSessionId: String?
     /// If set, sent as the first prompt once the session starts.
     var pendingTask: String?
     private var terminalView: LocalProcessTerminalView?
     private var claudePath: String?
 
-    init(label: String, cwd: String, server: ServerConfig, resumeSessionId: String? = nil) {
+    init(label: String, cwd: String, server: ServerConfig,
+         resumeSessionId: String? = nil, forkFromSessionId: String? = nil) {
         self.id = UUID()
         self.sessionId = UUID()
         self.label = label
         self.cwd = cwd
         self.server = server
         self.resumeSessionId = resumeSessionId
+        self.forkFromSessionId = forkFromSessionId
         self.claudePath = ClaudeLocator.find()
     }
 
@@ -64,12 +69,18 @@ final class PaneModel: ObservableObject, Identifiable {
             return
         }
 
-        // CLI changed: --session-id cannot be combined with --resume unless
-        // --fork-session is also passed. Solution: resume-only uses just --resume
-        // (claude fires hooks with the original session UUID); new sessions get
-        // --session-id so hooks still map 1:1 to this pane.
+        // Three launch modes:
+        // 1. Fork from parent: --resume <parentId> --fork-session --session-id <newUUID>
+        //    Sub-agent inherits full conversation history of the parent session.
+        // 2. Resume: --resume <existingId> only (CLI rejects combining with --session-id)
+        //    Hooks arrive with the original UUID, so we adopt it for routing.
+        // 3. New session: --session-id <newUUID> for fresh 1:1 hook routing.
         var args: [String]
-        if let resumeId = resumeSessionId, let existingUUID = UUID(uuidString: resumeId) {
+        if let forkId = forkFromSessionId {
+            sessionId = UUID()
+            args = ["--resume", forkId, "--fork-session", "--session-id", sessionId.uuidString]
+            forkFromSessionId = nil
+        } else if let resumeId = resumeSessionId, let existingUUID = UUID(uuidString: resumeId) {
             sessionId = existingUUID   // hooks arrive with this UUID — keep them routing here
             args = ["--resume", resumeId]
             resumeSessionId = nil      // only on first start; manual restart begins fresh

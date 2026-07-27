@@ -848,6 +848,100 @@
       font-style: normal;
     }
 
+    /* ── Changelog ───────────────────────────────── */
+    .changelog-inner {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .changelog-inner > .eyebrow { margin-bottom: 14px; }
+    .changelog-inner > h2 { margin-bottom: 52px; }
+
+    .cl-release {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 0 40px;
+      padding-bottom: 48px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 48px;
+    }
+
+    .cl-release:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .cl-meta { padding-top: 3px; }
+
+    .cl-ver {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: .05em;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .cl-date {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .04em;
+      display: block;
+    }
+
+    .cl-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--blue);
+      margin-bottom: 16px;
+    }
+
+    .cl-items {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cl-items li {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.55;
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .cl-items li::before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: var(--muted2);
+    }
+
+    .cl-items li strong {
+      color: var(--blue);
+      font-weight: 500;
+    }
+
+    .cl-fix {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--amber);
+      border: 1px solid rgba(255,180,84,.3);
+      border-radius: 3px;
+      padding: 1px 6px;
+      vertical-align: middle;
+      margin-left: 6px;
+      position: relative;
+      top: -1px;
+    }
+
     /* ── CTA ─────────────────────────────────────── */
     .cta-section {
       text-align: center;
@@ -1039,6 +1133,7 @@
   <ul class="nav-links">
     <li><a href="#how">How it works</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#changelog">Changelog</a></li>
     <li><a href="#install">Install</a></li>
     <li><a href="#about">About</a></li>
     <li><a href="#donate">Support</a></li>
@@ -1386,21 +1481,21 @@
       </div>
     </details>
 
-    <details class="phase">
+    <details class="phase" open>
       <summary>
         <div class="phase-left">
           <span class="phase-ver">v0.3</span>
           <span class="phase-title">Persistence</span>
         </div>
         <div class="phase-right">
-          <span class="phase-badge ph-planned">PLANNED</span>
+          <span class="phase-badge" style="background:rgba(61,255,136,.12);color:var(--green);border-color:rgba(61,255,136,.28);">IN PROGRESS</span>
           <span class="ph-arrow">&#9654;</span>
         </div>
       </summary>
       <div class="phase-body">
         <ul class="phase-items">
-          <li>Split pane — fork any terminal into a second agent in the same folder</li>
-          <li>Restore open terminals on launch</li>
+          <li>✓ Split pane — fork any terminal into a sub-agent with shared context</li>
+          <li>✓ Restore open terminals on launch</li>
           <li>Searchable session history per project</li>
           <li>Export session as markdown</li>
         </ul>
@@ -1492,6 +1587,56 @@
 
 <div class="divider"></div>
 
+<!-- ─── Changelog ────────────────────────────────────────────── -->
+<section id="changelog">
+  <div class="changelog-inner">
+
+    <div class="eyebrow">Changelog</div>
+    <h2>What&rsquo;s shipped.</h2>
+
+    <div class="cl-release">
+      <div class="cl-meta">
+        <span class="cl-ver">v0.2.0</span>
+        <span class="cl-date">July 2026</span>
+      </div>
+      <div>
+        <div class="cl-name">Memory &amp; Sub-agents</div>
+        <ul class="cl-items">
+          <li><strong>Resume sessions</strong> — reopen any project and it picks up exactly where you left off, same conversation and everything</li>
+          <li><strong>Recent projects panel</strong> — one click from the toolbar, no folder picker every time</li>
+          <li><strong>Sub-agent deployment</strong> — click the split button on any terminal, type a task, and a second agent spins up in the same folder with full context of what the first one was doing</li>
+          <li><strong>Restore last session on launch</strong> — all your open terminals come back automatically if you quit and reopen</li>
+          <li><strong>Auto-update checker</strong> — the app tells you when a new version is available</li>
+          <li><strong>Click a flight row to reopen a closed terminal</strong> — if you closed a terminal it shows back up right where it was</li>
+          <li><strong>Terminal slots reuse numbers</strong> — close T1, open a new one, it&rsquo;s T1 again instead of T4</li>
+          <li>HOLDING state sometimes stuck after approving a permission <span class="cl-fix">fix</span></li>
+          <li>Splitting a terminal used to resume the wrong session <span class="cl-fix">fix</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="cl-release">
+      <div class="cl-meta">
+        <span class="cl-ver">v0.1.0</span>
+        <span class="cl-date">July 2026</span>
+      </div>
+      <div>
+        <div class="cl-name">Foundation</div>
+        <ul class="cl-items">
+          <li><strong>First release</strong> — native macOS app, no Electron, no browser</li>
+          <li><strong>Terminal grid</strong> — open as many Claude sessions as you want, all in one window</li>
+          <li><strong>Live status radar</strong> — each terminal shows DEPARTED / HOLDING / LANDED at a glance</li>
+          <li><strong>Departures board</strong> — agents file their own task cards via MCP, you watch them move through the board without touching anything</li>
+          <li><strong>Notifications</strong> — the app pings you when an agent needs input or finishes</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
 <!-- ─── About ────────────────────────────────────────────────── -->
 <section id="about">
   <div class="container">
@@ -1563,6 +1708,7 @@
     <ul class="footer-links">
       <li><a href="#how">How it works</a></li>
       <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#changelog">Changelog</a></li>
       <li><a href="#install">Install</a></li>
       <li><a href="#donate">Support</a></li>
       <li><a href="https://discord.gg/RygfdCZEm" target="_blank" rel="noopener">Discord</a></li>
