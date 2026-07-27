@@ -25,6 +25,10 @@ final class PaneModel: ObservableObject, Identifiable {
     /// If set, claude is launched with --resume <id> --fork-session to branch
     /// from a parent session, giving the sub-agent full context of the parent.
     private var forkFromSessionId: String?
+    /// True when this pane was created as a fork (sub-agent). Forks never
+    /// claim the project's lastSessionId slot — the parent's session should
+    /// be what resumes next time the user opens that folder.
+    let isFork: Bool
     /// If set, sent as the first prompt once the session starts.
     var pendingTask: String?
     private var terminalView: LocalProcessTerminalView?
@@ -39,6 +43,7 @@ final class PaneModel: ObservableObject, Identifiable {
         self.server = server
         self.resumeSessionId = resumeSessionId
         self.forkFromSessionId = forkFromSessionId
+        self.isFork = forkFromSessionId != nil
         self.claudePath = ClaudeLocator.find()
     }
 

@@ -166,7 +166,9 @@ final class AppState: ObservableObject {
     }
 
     private func saveLastSession() {
-        let paths = panes.map { $0.cwd }
+        // Exclude forks — sub-agents are ephemeral and shouldn't restore alongside
+        // the parent; the parent's session is what the user wants to return to.
+        let paths = panes.filter { !$0.isFork }.map { $0.cwd }
         guard !paths.isEmpty,
               let data = try? JSONEncoder().encode(paths) else { return }
         try? data.write(to: Self.lastSessionURL, options: .atomic)
@@ -344,7 +346,10 @@ final class AppState: ObservableObject {
         switch event.event {
         case "SessionStart":
             pane.state = .standby
-            recentProjects.didStartSession(path: pane.cwd, sessionId: event.sessionId)
+            // Forks are sub-agents — don't overwrite the project's main session ID.
+            if !pane.isFork {
+                recentProjects.didStartSession(path: pane.cwd, sessionId: event.sessionId)
+            }
             appendChatter("\(pane.label) · session on the tarmac")
             if let task = pane.pendingTask, !task.isEmpty {
                 pane.pendingTask = nil
@@ -357,8 +362,9 @@ final class AppState: ObservableObject {
             pane.state = .departed
             clearFlightActivity(pane: pane)
             autoFileFlight(pane: pane, message: event.message)
-            // transcript_path filename is the definitive resume UUID — use it if present
-            if let tp = event.transcriptPath {
+            // transcript_path filename is the definitive resume UUID — use it if present.
+            // Skip for forks so sub-agents don't overwrite the parent project's session slot.
+            if !pane.isFork, let tp = event.transcriptPath {
                 let resumeId = URL(fileURLWithPath: tp).deletingPathExtension().lastPathComponent
                 if !resumeId.isEmpty {
                     recentProjects.didStartSession(path: pane.cwd, sessionId: resumeId)
