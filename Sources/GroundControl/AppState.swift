@@ -76,14 +76,14 @@ final class AppState: ObservableObject {
     }
 
     @discardableResult
-    func addTerminal(directory: String, resumeSessionId: String? = nil) -> PaneModel? {
+    func addTerminal(directory: String, resumeSessionId: String? = nil, fresh: Bool = false) -> PaneModel? {
         guard let server = hookServer.config else {
             appendChatter("GC · hook server not ready — try again in a moment")
             return nil
         }
-        // Record open; if caller didn't pass a specific session, use last known.
+        // Record open; fresh=true skips resume (e.g. split pane — independent new session).
         let knownSession = recentProjects.didOpen(path: directory)
-        let sessionToResume = resumeSessionId ?? knownSession
+        let sessionToResume = fresh ? nil : (resumeSessionId ?? knownSession)
 
         let pane = PaneModel(
             label: "T\(nextAvailableNumber)",
@@ -107,9 +107,9 @@ final class AppState: ObservableObject {
         addTerminal(directory: project.path, resumeSessionId: project.lastSessionId)
     }
 
-    /// Fork a pane — opens a fresh agent in the same directory with an optional task.
+    /// Fork a pane — always a new session in the same directory (never resumes).
     func splitPane(_ pane: PaneModel, task: String = "") {
-        guard let newPane = addTerminal(directory: pane.cwd) else { return }
+        guard let newPane = addTerminal(directory: pane.cwd, fresh: true) else { return }
         if !task.isEmpty {
             newPane.pendingTask = task
         }
@@ -244,6 +244,19 @@ final class AppState: ObservableObject {
         board = boardStore.board
     }
 
+    private func resumeActiveFlight(pane: PaneModel) {
+        boardStore.update { board in
+            for idx in board.flights.indices {
+                if board.flights[idx].assignedPane == pane.label &&
+                   board.flights[idx].status == .holding {
+                    board.flights[idx].status = .departed
+                    board.flights[idx].updatedAt = Date()
+                }
+            }
+        }
+        board = boardStore.board
+    }
+
     private func holdActiveFlight(pane: PaneModel) {
         boardStore.update { board in
             for idx in board.flights.indices {
@@ -261,6 +274,17 @@ final class AppState: ObservableObject {
         guard let pane = panes.first(where: { $0.label == label }) else { return }
         selectedPaneId = pane.id
         appendChatter("\(label) · on frequency")
+    }
+
+    /// Focus the pane for a flight, or reopen a terminal if it was closed.
+    func focusOrReopenFlight(_ flight: Flight) {
+        if let label = flight.assignedPane,
+           let pane = panes.first(where: { $0.label == label }) {
+            selectedPaneId = pane.id
+            appendChatter("\(label) · on frequency")
+        } else if let path = flight.projectPath {
+            addTerminal(directory: path, resumeSessionId: flight.sessionId)
+        }
     }
 
     // MARK: - Chatter
@@ -310,6 +334,13 @@ final class AppState: ObservableObject {
                 if !resumeId.isEmpty {
                     recentProjects.didStartSession(path: pane.cwd, sessionId: resumeId)
                 }
+            }
+        case "PreToolUse":
+            // A tool is about to run — permission was already granted (or auto-accepted).
+            // Flip back to DEPARTED so the pane doesn't stay stuck on HOLDING.
+            if pane.state == .holding {
+                pane.state = .departed
+                resumeActiveFlight(pane: pane)
             }
         case "PermissionRequest":
             pane.state = .holding

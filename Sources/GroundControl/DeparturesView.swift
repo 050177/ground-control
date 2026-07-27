@@ -26,11 +26,7 @@ struct DeparturesView: View {
                     ForEach(sortedFlights) { flight in
                         FlightRow(
                             flight: flight,
-                            onFocus: {
-                                if let pane = flight.assignedPane {
-                                    appState.focusPane(label: pane)
-                                }
-                            },
+                            onFocus: { appState.focusOrReopenFlight(flight) },
                             onRemove: { appState.removeFlight(id: flight.id) }
                         )
                     }

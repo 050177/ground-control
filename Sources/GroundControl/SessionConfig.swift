@@ -14,6 +14,7 @@ enum SessionConfigWriter {
         let events = [
             "SessionStart",
             "UserPromptSubmit",
+            "PreToolUse",   // fires after permission granted — flips HOLDING → DEPARTED
             "PermissionRequest",
             "Notification",
             "Stop",
