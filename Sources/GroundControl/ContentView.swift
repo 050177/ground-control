@@ -52,6 +52,19 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
             .keyboardShortcut("b", modifiers: .command)
+            if let update = appState.pendingUpdate {
+                Button(action: { NSWorkspace.shared.open(update.url) }) {
+                    Text("UPDATE")
+                        .font(Theme.mono(9, weight: .bold))
+                        .foregroundStyle(Theme.bg)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Theme.radar)
+                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                }
+                .buttonStyle(.plain)
+                .help("Update available: \(update.version) — click to download")
+            }
             Button(action: { appState.showTutorial() }) {
                 Text("?")
                     .font(Theme.mono(11, weight: .bold))

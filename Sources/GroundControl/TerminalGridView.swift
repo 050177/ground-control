@@ -55,6 +55,10 @@ struct DashboardView: View {
             header
             Divider().background(Theme.hairline)
             newProjectButton
+            if !appState.savedSessionPaths.isEmpty {
+                Divider().background(Theme.hairline)
+                restoreSessionRow
+            }
             Divider().background(Theme.hairline)
             if recents.isEmpty {
                 noRecents
@@ -76,6 +80,37 @@ struct DashboardView: View {
         }
         .padding(.horizontal, 14)
         .frame(height: 36)
+    }
+
+    private var restoreSessionRow: some View {
+        HStack(spacing: 0) {
+            Button(action: { appState.openLastSession() }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text("Restore last session")
+                        .font(Theme.mono(11, weight: .bold))
+                    Text("· \(appState.savedSessionPaths.count) terminal\(appState.savedSessionPaths.count == 1 ? "" : "s")")
+                        .font(Theme.mono(11))
+                        .foregroundStyle(Theme.dim)
+                    Spacer()
+                }
+                .foregroundStyle(Theme.amber)
+                .padding(.horizontal, 14)
+                .frame(height: 38)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            Button(action: { appState.dismissSavedSession() }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(Theme.dim)
+                    .frame(width: 32, height: 38)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Dismiss")
+        }
     }
 
     private var newProjectButton: some View {

@@ -39,6 +39,12 @@ struct GroundControlApp: App {
                 .keyboardShortcut("q", modifiers: .command)
             }
             CommandGroup(replacing: .help) {
+                if let update = appState.pendingUpdate {
+                    Button("Update available — \(update.version)") {
+                        NSWorkspace.shared.open(update.url)
+                    }
+                    Divider()
+                }
                 Button("Ground Control Website") {
                     NSWorkspace.shared.open(URL(string: "https://050177.github.io/ground-control")!)
                 }

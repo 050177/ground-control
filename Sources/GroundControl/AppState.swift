@@ -16,6 +16,10 @@ final class AppState: ObservableObject {
     @Published var boardVisible = true
     @Published var tutorialVisible = false
     @Published var chatter: [ChatterLine] = []
+    /// Non-nil when a newer GitHub release is available.
+    @Published var pendingUpdate: UpdateInfo?
+    /// Paths of panes that were open last time the app ran — shown as "restore" prompt.
+    @Published var savedSessionPaths: [String] = []
 
     let boardStore: BoardStore
     let recentProjects: RecentProjectsStore
@@ -25,6 +29,10 @@ final class AppState: ObservableObject {
     private var lastDirectory: String = NSHomeDirectory()
     /// Monotonic terminal counter: T1, T2, … never reused within a run.
     private var nextTerminalNumber = 1
+
+    private static var lastSessionURL: URL {
+        ServerConfig.appSupportDirectory.appendingPathComponent("last-session.json")
+    }
 
     init() {
         let store = BoardStore()
@@ -41,6 +49,8 @@ final class AppState: ObservableObject {
         }
         Notify.requestAuthorization()
         startGitPolling()
+        loadSavedSession()
+        Task { await checkForUpdate() }
     }
 
     // MARK: - Terminals
@@ -108,10 +118,49 @@ final class AppState: ObservableObject {
     }
 
     func shutdown() {
+        saveLastSession()
         for pane in panes {
             pane.terminate()
         }
         hookServer.stop()
+    }
+
+    // MARK: - Session restore
+
+    private func loadSavedSession() {
+        guard let data = try? Data(contentsOf: Self.lastSessionURL),
+              let paths = try? JSONDecoder().decode([String].self, from: data),
+              !paths.isEmpty else { return }
+        savedSessionPaths = paths
+    }
+
+    func openLastSession() {
+        let paths = savedSessionPaths
+        savedSessionPaths = []
+        try? FileManager.default.removeItem(at: Self.lastSessionURL)
+        for path in paths {
+            addTerminal(directory: path)
+        }
+    }
+
+    func dismissSavedSession() {
+        savedSessionPaths = []
+        try? FileManager.default.removeItem(at: Self.lastSessionURL)
+    }
+
+    private func saveLastSession() {
+        let paths = panes.map { $0.cwd }
+        guard !paths.isEmpty,
+              let data = try? JSONEncoder().encode(paths) else { return }
+        try? data.write(to: Self.lastSessionURL, options: .atomic)
+    }
+
+    // MARK: - Update check
+
+    private func checkForUpdate() async {
+        guard let update = await UpdateChecker.check() else { return }
+        pendingUpdate = update
+        appendChatter("GC · update available — \(update.version)")
     }
 
     // MARK: - Board
