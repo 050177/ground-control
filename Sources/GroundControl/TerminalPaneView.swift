@@ -18,6 +18,7 @@ struct TerminalPaneView: View {
     @ObservedObject var pane: PaneModel
     let isSelected: Bool
     let onSelect: () -> Void
+    let onSplit: () -> Void
     let onClose: () -> Void
 
     var body: some View {
@@ -53,6 +54,11 @@ struct TerminalPaneView: View {
                 .foregroundStyle(Theme.dim)
                 .lineLimit(1)
                 .truncationMode(.head)
+            Button(action: onSplit) {
+                Image(systemName: "rectangle.split.2x1")
+            }
+            .buttonStyle(TitleBarButtonStyle())
+            .help("Split — open another agent in this folder")
             Button(action: { pane.restart() }) {
                 Image(systemName: "arrow.clockwise")
             }

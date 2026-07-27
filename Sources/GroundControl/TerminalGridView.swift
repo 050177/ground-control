@@ -21,6 +21,7 @@ struct TerminalGridView: View {
                                 pane: pane,
                                 isSelected: appState.selectedPaneId == pane.id,
                                 onSelect: { appState.selectedPaneId = pane.id },
+                                onSplit: { appState.splitPane(pane) },
                                 onClose: { appState.removeTerminal(pane.id) }
                             )
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

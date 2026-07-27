@@ -91,6 +91,11 @@ final class AppState: ObservableObject {
         addTerminal(directory: project.path, resumeSessionId: project.lastSessionId)
     }
 
+    /// Fork a pane — opens a fresh agent in the same directory without prompting.
+    func splitPane(_ pane: PaneModel) {
+        addTerminal(directory: pane.cwd)
+    }
+
     func removeTerminal(_ id: UUID) {
         guard let index = panes.firstIndex(where: { $0.id == id }) else { return }
         let pane = panes[index]
