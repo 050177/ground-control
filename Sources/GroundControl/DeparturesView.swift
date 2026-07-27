@@ -95,13 +95,22 @@ struct FlightRow: View {
                 .font(Theme.mono(11, weight: .bold))
                 .foregroundStyle(Theme.dim)
                 .frame(width: 60, alignment: .leading)
-            Text(flight.title)
-                .font(Theme.mono(11))
-                .foregroundStyle(flight.status == .landed ? Theme.dim : Theme.landed)
-                .strikethrough(flight.status == .cancelled)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(flight.title)
+                    .font(Theme.mono(11))
+                    .foregroundStyle(flight.status == .landed ? Theme.dim : Theme.landed)
+                    .strikethrough(flight.status == .cancelled)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                if flight.status == .departed, !flight.notes.isEmpty {
+                    Text(flight.notes)
+                        .font(Theme.mono(9))
+                        .foregroundStyle(Theme.radar.opacity(0.6))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             Text(flight.assignedPane ?? "—")
                 .font(Theme.mono(11))
                 .foregroundStyle(Theme.dim)
@@ -125,7 +134,8 @@ struct FlightRow: View {
             .help("Remove flight")
         }
         .padding(.horizontal, 12)
-        .frame(height: 26)
+        .padding(.vertical, 5)
+        .frame(minHeight: 26)
         .background(hovering ? Theme.bg.opacity(0.6) : Color.clear)
         .contentShape(Rectangle())
         .onHover { hovering = $0 }

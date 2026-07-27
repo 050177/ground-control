@@ -87,6 +87,11 @@ public struct HookEvent: Codable, Sendable {
     /// Path to the session JSONL file. The filename (without extension) is the
     /// UUID needed for `--resume`. Present on UserPromptSubmit.
     public let transcriptPath: String?
+    /// Present on PreToolUse — the tool being invoked (e.g. "Read", "Bash").
+    public let toolName: String?
+    /// Short human-readable label derived from toolName + tool_input,
+    /// e.g. "Reading · src/auth.ts" or "Bash · npm test". nil if not a tool event.
+    public let toolActivity: String?
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: DynamicKey.self)
@@ -95,18 +100,72 @@ public struct HookEvent: Codable, Sendable {
         cwd            = c.decode("cwd")
         permissionMode = c.decode("permission_mode")
         transcriptPath = c.decode("transcript_path")
-        // "prompt" is the actual field name in claude 2.x; fall back to older names
         message = c.decode("prompt") ?? c.decode("message") ?? c.decode("user_message") ?? c.decode("input")
+        let tName = c.decode("tool_name")
+        toolName = tName
+        // Build a readable activity string from tool_name + tool_input fields.
+        if let tName {
+            let input = (try? c.nestedContainer(keyedBy: DynamicKey.self,
+                                                forKey: DynamicKey(stringValue: "tool_input")))
+            let path    = input?.decode("file_path") ?? input?.decode("path")
+            let command = input?.decode("command")
+            let url     = input?.decode("url")
+            let query   = input?.decode("query")
+            toolActivity = HookEvent.activityLabel(tool: tName,
+                                                   param: path ?? command ?? url ?? query)
+        } else {
+            toolActivity = nil
+        }
     }
 
     public init(sessionId: String, event: String, cwd: String? = nil,
-                permissionMode: String? = nil, message: String? = nil, transcriptPath: String? = nil) {
+                permissionMode: String? = nil, message: String? = nil,
+                transcriptPath: String? = nil, toolName: String? = nil,
+                toolActivity: String? = nil) {
         self.sessionId      = sessionId
         self.event          = event
         self.cwd            = cwd
         self.permissionMode = permissionMode
         self.message        = message
         self.transcriptPath = transcriptPath
+        self.toolName       = toolName
+        self.toolActivity   = toolActivity
+    }
+
+    private static func activityLabel(tool: String, param: String?) -> String {
+        let verb: String
+        switch tool.lowercased() {
+        case "read", "view":              verb = "Reading"
+        case "edit", "multiedit":         verb = "Editing"
+        case "write":                     verb = "Writing"
+        case "bash":                      verb = "Bash"
+        case "ls", "glob":               verb = "Browsing"
+        case "grep":                      verb = "Searching"
+        case "webfetch":                  verb = "Fetching"
+        case "websearch":                 verb = "Searching web"
+        case "todoread", "todowrite":     verb = "Tasks"
+        case "agent":                     verb = "Sub-agent"
+        default:
+            // mcp__ prefixed tools — strip prefix and title-case
+            if tool.hasPrefix("mcp__") {
+                verb = tool.dropFirst(5).split(separator: "_")
+                    .map { $0.prefix(1).uppercased() + $0.dropFirst() }
+                    .joined(separator: " ")
+            } else {
+                verb = tool
+            }
+        }
+        guard let p = param?.trimmingCharacters(in: .whitespacesAndNewlines), !p.isEmpty else {
+            return verb
+        }
+        // Trim long params — keep last path component for file paths, first 40 chars for commands.
+        let short: String
+        if tool.lowercased() == "bash" {
+            short = p.count > 42 ? String(p.prefix(40)) + "…" : p
+        } else {
+            short = URL(fileURLWithPath: p).lastPathComponent
+        }
+        return "\(verb) · \(short)"
     }
 }
 

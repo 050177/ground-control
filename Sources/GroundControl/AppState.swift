@@ -265,6 +265,26 @@ final class AppState: ObservableObject {
         board = boardStore.board
     }
 
+    private func updateFlightActivity(pane: PaneModel, activity: String) {
+        boardStore.update { board in
+            for idx in board.flights.indices where board.flights[idx].assignedPane == pane.label
+                && board.flights[idx].status == .departed {
+                board.flights[idx].notes = activity
+                board.flights[idx].updatedAt = Date()
+            }
+        }
+        board = boardStore.board
+    }
+
+    private func clearFlightActivity(pane: PaneModel) {
+        boardStore.update { board in
+            for idx in board.flights.indices where board.flights[idx].assignedPane == pane.label {
+                board.flights[idx].notes = ""
+            }
+        }
+        board = boardStore.board
+    }
+
     private func holdActiveFlight(pane: PaneModel) {
         boardStore.update { board in
             for idx in board.flights.indices {
@@ -335,6 +355,7 @@ final class AppState: ObservableObject {
             }
         case "UserPromptSubmit":
             pane.state = .departed
+            clearFlightActivity(pane: pane)
             autoFileFlight(pane: pane, message: event.message)
             // transcript_path filename is the definitive resume UUID — use it if present
             if let tp = event.transcriptPath {
@@ -350,6 +371,10 @@ final class AppState: ObservableObject {
                 pane.state = .departed
                 resumeActiveFlight(pane: pane)
             }
+            // Update the board row with what the agent is doing right now.
+            if let activity = event.toolActivity {
+                updateFlightActivity(pane: pane, activity: activity)
+            }
         case "PermissionRequest":
             pane.state = .holding
             holdActiveFlight(pane: pane)
@@ -361,6 +386,7 @@ final class AppState: ObservableObject {
             appendChatter("\(pane.label) · notification")
         case "Stop":
             pane.state = .landed
+            clearFlightActivity(pane: pane)
             landActiveFlight(pane: pane)
             appendChatter("\(pane.label) · LANDED")
             Notify.post(title: "\(pane.label) landed", body: "Agent finished its turn.")
