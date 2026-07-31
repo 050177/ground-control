@@ -96,17 +96,45 @@ struct ContentView: View {
             .buttonStyle(.plain)
             .keyboardShortcut("p", modifiers: [.command, .shift])
             if let update = appState.pendingUpdate {
-                Button(action: { NSWorkspace.shared.open(update.url) }) {
-                    Text("UPDATE")
+                switch appState.updatePhase {
+                case .idle:
+                    Button(action: { appState.installUpdate() }) {
+                        Text("UPDATE \(update.version)")
+                            .font(Theme.mono(9, weight: .bold))
+                            .foregroundStyle(Theme.bg)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(Theme.radar)
+                            .clipShape(RoundedRectangle(cornerRadius: 3))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Click to download and install \(update.version) — app will relaunch automatically")
+                case .downloading:
+                    Text("DOWNLOADING…")
                         .font(Theme.mono(9, weight: .bold))
-                        .foregroundStyle(Theme.bg)
+                        .foregroundStyle(Theme.amber)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
-                        .background(Theme.radar)
-                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                        .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Theme.amber.opacity(0.4), lineWidth: 1))
+                case .installing:
+                    Text("INSTALLING…")
+                        .font(Theme.mono(9, weight: .bold))
+                        .foregroundStyle(Theme.amber)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Theme.amber.opacity(0.4), lineWidth: 1))
+                case .failed:
+                    Button(action: { NSWorkspace.shared.open(update.url) }) {
+                        Text("UPDATE FAILED — OPEN")
+                            .font(Theme.mono(9, weight: .bold))
+                            .foregroundStyle(Theme.red)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Theme.red.opacity(0.4), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Auto-install failed — click to open the release page")
                 }
-                .buttonStyle(.plain)
-                .help("Update available: \(update.version) — click to download")
             }
             Button(action: { appState.showTutorial() }) {
                 Text("?")

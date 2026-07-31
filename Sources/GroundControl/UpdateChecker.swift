@@ -1,8 +1,9 @@
 import Foundation
 
 struct UpdateInfo: Sendable {
-    let version: String   // e.g. "v0.3.0"
-    let url: URL
+    let version: String      // e.g. "v0.3.0"
+    let url: URL             // release page (fallback)
+    let downloadURL: URL     // direct zip download
 }
 
 enum UpdateChecker {
@@ -23,7 +24,19 @@ enum UpdateChecker {
 
         let latest = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
         guard isNewer(latest, than: current) else { return nil }
-        return UpdateInfo(version: tag, url: releaseURL)
+
+        // Prefer the first attached zip asset; fall back to constructing the URL from the tag.
+        let downloadURL: URL
+        if let assets = json["assets"] as? [[String: Any]],
+           let first = assets.first(where: { ($0["name"] as? String)?.hasSuffix(".zip") == true }),
+           let rawURL = first["browser_download_url"] as? String,
+           let assetURL = URL(string: rawURL) {
+            downloadURL = assetURL
+        } else {
+            let encoded = "Ground%20Control.zip"
+            downloadURL = URL(string: "https://github.com/050177/ground-control/releases/download/\(tag)/\(encoded)")!
+        }
+        return UpdateInfo(version: tag, url: releaseURL, downloadURL: downloadURL)
     }
 
     private static func isNewer(_ a: String, than b: String) -> Bool {

@@ -20,6 +20,13 @@ final class AppState: ObservableObject {
     @Published var chatter: [ChatterLine] = []
     /// Non-nil when a newer GitHub release is available.
     @Published var pendingUpdate: UpdateInfo?
+    /// Progress of an in-flight auto-install.
+    @Published var updatePhase: UpdatePhase = .idle
+
+    enum UpdatePhase: Equatable {
+        case idle, downloading, installing, failed(String)
+        var isActive: Bool { self != .idle }
+    }
     /// Paths of panes that were open last time the app ran — shown as "restore" prompt.
     @Published var savedSessionPaths: [String] = []
 
@@ -177,12 +184,76 @@ final class AppState: ObservableObject {
         try? data.write(to: Self.lastSessionURL, options: .atomic)
     }
 
-    // MARK: - Update check
+    // MARK: - Update check + auto-install
 
     private func checkForUpdate() async {
         guard let update = await UpdateChecker.check() else { return }
         pendingUpdate = update
         appendChatter("GC · update available — \(update.version)")
+    }
+
+    func installUpdate() {
+        guard let info = pendingUpdate, updatePhase == .idle else { return }
+        Task { await performInstall(info) }
+    }
+
+    private func performInstall(_ info: UpdateInfo) async {
+        updatePhase = .downloading
+        appendChatter("GC · downloading \(info.version)…")
+
+        // Download zip to temp
+        let zipURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gc-update.zip")
+        do {
+            let (data, _) = try await URLSession.shared.data(from: info.downloadURL)
+            try data.write(to: zipURL, options: .atomic)
+        } catch {
+            updatePhase = .failed("Download failed — \(error.localizedDescription)")
+            appendChatter("GC · update download failed")
+            return
+        }
+
+        updatePhase = .installing
+        appendChatter("GC · installing…")
+
+        // Unzip to temp dir
+        let extractDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gc-update-\(UUID().uuidString.prefix(8))")
+        let unzip = Process()
+        unzip.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
+        unzip.arguments = ["-q", "-o", zipURL.path, "-d", extractDir.path]
+        guard (try? unzip.run()) != nil else {
+            updatePhase = .failed("Unzip failed")
+            return
+        }
+        unzip.waitUntilExit()
+
+        let newApp = extractDir.appendingPathComponent("Ground Control.app")
+        guard FileManager.default.fileExists(atPath: newApp.path) else {
+            updatePhase = .failed("App not found in zip")
+            return
+        }
+
+        // Write a tiny shell script: wait for us to quit, swap, relaunch.
+        let dst = Bundle.main.bundleURL.path
+        let src = newApp.path
+        let script = """
+        #!/bin/bash
+        sleep 1.5
+        rm -rf '\(dst)'
+        cp -R '\(src)' '\(dst)'
+        open '\(dst)'
+        """
+        let scriptPath = NSTemporaryDirectory() + "gc-replace.sh"
+        try? script.write(toFile: scriptPath, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptPath)
+
+        let launcher = Process()
+        launcher.executableURL = URL(fileURLWithPath: "/bin/bash")
+        launcher.arguments = [scriptPath]
+        try? launcher.run()   // detached — survives our termination
+
+        NSApplication.shared.terminate(nil)
     }
 
     // MARK: - Board
