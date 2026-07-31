@@ -242,6 +242,7 @@ final class AppState: ObservableObject {
         sleep 1.5
         rm -rf '\(dst)'
         cp -R '\(src)' '\(dst)'
+        xattr -dr com.apple.quarantine '\(dst)' 2>/dev/null || true
         open '\(dst)'
         """
         let scriptPath = NSTemporaryDirectory() + "gc-replace.sh"

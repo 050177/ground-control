@@ -1411,22 +1411,24 @@
 
     <div class="eyebrow">Install</div>
     <h2>Up in 30 seconds.</h2>
-    <p class="install-lead">Requires Xcode command-line tools and the Claude Code CLI. Everything else is included.</p>
+    <p class="install-lead">Requires the Claude Code CLI. Paste this in Terminal &mdash; it downloads, installs, and clears the Gatekeeper flag in one shot.</p>
 
     <div class="code-block">
       <div class="code-header">
         <span class="code-lang">BASH</span>
         <button class="copy-btn" id="copy-btn" onclick="copyCode()">COPY</button>
       </div>
-      <pre id="install-pre"><span class="c-comment"># clone and run in one go</span>
-<span class="c-cmd">git clone</span> https://github.com/050177/ground-control
-<span class="c-cmd">cd</span> ground-control
-<span class="c-cmd">Scripts/run.sh</span>
-
-<span class="c-comment"># or build a release bundle</span>
-<span class="c-cmd">Scripts/build-app.sh</span> release
-<span class="c-cmd">open</span> "build/Ground Control.app"</pre>
+      <pre id="install-pre"><span class="c-comment"># download, install, clear Gatekeeper flag</span>
+<span class="c-cmd">curl</span> -L "https://github.com/050177/ground-control/releases/latest/download/Ground%20Control.zip" -o /tmp/gc.zip \
+  &amp;&amp; <span class="c-cmd">unzip</span> -q -o /tmp/gc.zip -d /tmp/gc \
+  &amp;&amp; <span class="c-cmd">cp</span> -R "/tmp/gc/Ground Control.app" /Applications/ \
+  &amp;&amp; <span class="c-cmd">xattr</span> -dr com.apple.quarantine "/Applications/Ground Control.app" \
+  &amp;&amp; <span class="c-cmd">open</span> "/Applications/Ground Control.app"</pre>
     </div>
+
+    <p style="font-size:0.82rem;color:var(--text-muted);margin-top:1.1rem;line-height:1.6;">
+      Or build from source: <code style="font-size:0.8rem;opacity:.8;">git clone https://github.com/050177/ground-control &amp;&amp; cd ground-control &amp;&amp; Scripts/run.sh</code>
+    </p>
 
     <div class="shortcuts">
       <div class="sc-row">
