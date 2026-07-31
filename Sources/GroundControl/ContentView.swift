@@ -10,7 +10,15 @@ struct ContentView: View {
         ZStack {
             VStack(spacing: 0) {
                 toolbar
-                TerminalGridView()
+                HStack(spacing: 0) {
+                    TerminalGridView()
+                    if appState.previewVisible {
+                        PreviewPanelView()
+                            .frame(width: 440)
+                            .transition(.move(edge: .trailing))
+                    }
+                }
+                .animation(.spring(duration: 0.25), value: appState.previewVisible)
                 if appState.boardVisible {
                     DeparturesView()
                 }
@@ -74,6 +82,19 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
             .keyboardShortcut("b", modifiers: .command)
+            Button(action: { appState.togglePreview() }) {
+                Text("PREVIEW")
+                    .font(Theme.mono(10, weight: .bold))
+                    .foregroundStyle(appState.previewVisible ? Theme.landed : Theme.dim)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 3)
+                            .strokeBorder(Theme.hairline, lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut("p", modifiers: [.command, .shift])
             if let update = appState.pendingUpdate {
                 Button(action: { NSWorkspace.shared.open(update.url) }) {
                     Text("UPDATE")

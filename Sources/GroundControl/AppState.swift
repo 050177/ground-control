@@ -14,6 +14,8 @@ final class AppState: ObservableObject {
     @Published var selectedPaneId: UUID?
     @Published var board: Board
     @Published var boardVisible = true
+    @Published var previewVisible = false
+    @Published var previewURL = ""
     @Published var tutorialVisible = false
     @Published var chatter: [ChatterLine] = []
     /// Non-nil when a newer GitHub release is available.
@@ -49,6 +51,7 @@ final class AppState: ObservableObject {
         hookServer = HookServer(board: store)
         hookServer.onHook = { [weak self] event in self?.handleHook(event) }
         hookServer.onBoardChanged = { [weak self] newBoard in self?.board = newBoard }
+        hookServer.onPreviewURL = { [weak self] url in self?.setPreviewURL(url) }
         do {
             try hookServer.start()
         } catch {
@@ -186,6 +189,15 @@ final class AppState: ObservableObject {
 
     func toggleBoard() {
         boardVisible.toggle()
+    }
+
+    func togglePreview() {
+        previewVisible.toggle()
+    }
+
+    func setPreviewURL(_ url: String) {
+        previewURL = url
+        previewVisible = true
     }
 
     func showTutorial() {
@@ -353,8 +365,10 @@ final class AppState: ObservableObject {
             appendChatter("\(pane.label) · session on the tarmac")
             if let task = pane.pendingTask, !task.isEmpty {
                 pane.pendingTask = nil
-                // Delay to let claude render its welcome screen before we send input.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak pane] in
+                // Forks load the parent's full conversation history before showing the REPL
+                // prompt, so they need a longer head start than a fresh session.
+                let delay: Double = pane.isFork ? 3.5 : 1.2
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak pane] in
                     pane?.sendInput(task + "\n")
                 }
             }

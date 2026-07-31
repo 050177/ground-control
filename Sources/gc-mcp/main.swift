@@ -123,6 +123,13 @@ await server.withMethodHandler(ListTools.self) { _ in
                 "flight": field("Flight number (e.g. \"7\") or id"),
             ], required: ["flight"])
         ),
+        Tool(
+            name: "preview_url",
+            description: "Set the Ground Control preview panel to display a URL. Call this when you start a local dev server or write an HTML file — the preview panel opens automatically and navigates there.",
+            inputSchema: schema([
+                "url": field("URL to display, e.g. http://localhost:5173 or file:///path/to/index.html"),
+            ], required: ["url"])
+        ),
     ])
 }
 
@@ -183,6 +190,13 @@ await server.withMethodHandler(CallTool.self) { params in
                 return result("flight is required", true)
             }
             let (status, body) = try await api.call("GET", "/api/flights/\(flight)")
+            return result(body, status != 200)
+
+        case "preview_url":
+            guard let url = params.arguments?["url"]?.stringValue, !url.isEmpty else {
+                return result("url is required", true)
+            }
+            let (status, body) = try await api.call("POST", "/api/preview", json: ["url": url])
             return result(body, status != 200)
 
         default:

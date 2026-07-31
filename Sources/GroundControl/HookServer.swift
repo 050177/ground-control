@@ -16,6 +16,8 @@ final class HookServer: @unchecked Sendable {
     var onHook: @MainActor (HookEvent) -> Void = { _ in }
     /// Called on the main actor when the board changes via the API.
     var onBoardChanged: @MainActor (Board) -> Void = { _ in }
+    /// Called on the main actor when an agent sets the preview URL via the MCP tool.
+    var onPreviewURL: @MainActor (String) -> Void = { _ in }
 
     private(set) var config: ServerConfig?
 
@@ -175,6 +177,18 @@ final class HookServer: @unchecked Sendable {
             }
 
             Self.respond(connection, status: 405, body: #"{"error":"method not allowed"}"#)
+            return
+        }
+
+        if method == "POST", segments == ["api", "preview"] {
+            struct PreviewPayload: Codable { var url: String }
+            guard let payload = try? JSONDecoder().decode(PreviewPayload.self, from: request.body),
+                  !payload.url.isEmpty else {
+                Self.respond(connection, status: 422, body: #"{"error":"url required"}"#)
+                return
+            }
+            Self.respond(connection, status: 200, body: #"{"ok":true}"#)
+            Task { @MainActor in self.onPreviewURL(payload.url) }
             return
         }
 

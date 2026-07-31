@@ -75,6 +75,14 @@
       color: var(--blue);
     }
 
+    .nav-logo-img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      object-fit: cover;
+    }
+
     .pulse-dot {
       width: 8px;
       height: 8px;
@@ -1127,7 +1135,7 @@
 <!-- ─── Nav ──────────────────────────────────────────────── -->
 <nav>
   <a class="nav-logo" href="#">
-    <span class="pulse-dot"></span>
+    <img class="nav-logo-img" src="logo.png" alt="Ground Control">
     Ground Control
   </a>
   <ul class="nav-links">
@@ -1227,7 +1235,7 @@
             </tr>
           </tbody>
         </table>
-        <div class="win-chatter">ground-control &nbsp;&middot;&nbsp; 3 sessions &nbsp;&middot;&nbsp; 2 active &nbsp;&middot;&nbsp; &#8984;B departures &nbsp;&middot;&nbsp; &#8984;N new terminal</div>
+        <div class="win-chatter">ground-control &nbsp;&middot;&nbsp; 3 sessions &nbsp;&middot;&nbsp; 2 active &nbsp;&middot;&nbsp; &#8984;B departures &nbsp;&middot;&nbsp; &#8984;&#x21E7;P preview &nbsp;&middot;&nbsp; &#8984;N new terminal</div>
       </div>
 
     </div>
@@ -1357,7 +1365,7 @@
 
     <div class="eyebrow">MCP Tools</div>
     <h2>The departures board is agent-native.</h2>
-    <p class="tools-intro">Ground Control exposes five MCP tools so your agents can read and write the task board directly &mdash; no humans in the loop, no side-channel scripts.</p>
+    <p class="tools-intro">Ground Control exposes six MCP tools so your agents can read and write the task board, and control the live preview panel &mdash; no humans in the loop, no side-channel scripts.</p>
 
     <div class="tools-grid">
 
@@ -1384,6 +1392,11 @@
       <div class="tool-card">
         <div class="tool-name">departures_get</div>
         <div class="tool-desc">Look up a single flight by number or ID.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">preview_url</div>
+        <div class="tool-desc">Set the live preview panel to a URL. Agents call this when they start a dev server or generate an HTML file &mdash; the panel opens automatically.</div>
       </div>
 
     </div>
@@ -1423,6 +1436,10 @@
       <div class="sc-row">
         <span class="key">&#8984;B</span>
         <span class="sc-desc">Toggle the departures board</span>
+      </div>
+      <div class="sc-row">
+        <span class="key">&#8984;&#x21E7;P</span>
+        <span class="sc-desc">Toggle the live preview panel</span>
       </div>
       <div class="sc-row">
         <span class="key">&#8984;Q</span>
@@ -1481,14 +1498,14 @@
       </div>
     </details>
 
-    <details class="phase" open>
+    <details class="phase">
       <summary>
         <div class="phase-left">
           <span class="phase-ver">v0.3</span>
-          <span class="phase-title">Persistence</span>
+          <span class="phase-title">Persistence &amp; Preview</span>
         </div>
         <div class="phase-right">
-          <span class="phase-badge" style="background:rgba(61,255,136,.12);color:var(--green);border-color:rgba(61,255,136,.28);">IN PROGRESS</span>
+          <span class="phase-badge ph-shipped">SHIPPED</span>
           <span class="ph-arrow">&#9654;</span>
         </div>
       </summary>
@@ -1496,13 +1513,14 @@
         <ul class="phase-items">
           <li>✓ Split pane — fork any terminal into a sub-agent with shared context</li>
           <li>✓ Restore open terminals on launch</li>
-          <li>Searchable session history per project</li>
-          <li>Export session as markdown</li>
+          <li>✓ Live preview panel — WKWebView side panel, auto-refreshes on file changes</li>
+          <li>✓ Agents control the preview via <code style="font-family:var(--mono);font-size:12px;color:var(--green)">preview_url</code> MCP tool</li>
+          <li>✓ App icon</li>
         </ul>
       </div>
     </details>
 
-    <details class="phase">
+    <details class="phase" open>
       <summary>
         <div class="phase-left">
           <span class="phase-ver">v0.4</span>
@@ -1516,7 +1534,8 @@
       <div class="phase-body">
         <ul class="phase-items">
           <li>Real-time diff viewer — watch agents edit files live</li>
-          <li>Screenshot diff for frontend work</li>
+          <li>Searchable session history per project</li>
+          <li>Export session as markdown</li>
           <li>Token and cost tracker per session</li>
         </ul>
       </div>
@@ -1600,13 +1619,17 @@
         <span class="cl-date">July 2026</span>
       </div>
       <div>
-        <div class="cl-name">Sub-agents &amp; Persistence</div>
+        <div class="cl-name">Sub-agents, Persistence &amp; Preview</div>
         <ul class="cl-items">
+          <li><strong>Live preview panel</strong> — toggle a WKWebView panel on the right with &#8984;&#x21E7;P; auto-refreshes when files change on disk; agents call <code style="font-family:var(--mono);font-size:12px">preview_url</code> to open it automatically when they start a dev server</li>
           <li><strong>Sub-agent deployment</strong> — click the split button on any terminal, type a task, and a second agent forks from it with the full conversation context already loaded</li>
           <li><strong>Restore last session on launch</strong> — all your open terminals come back automatically when you reopen the app</li>
           <li><strong>Click a flight row to reopen a closed terminal</strong> — the session picks back up right where it left off</li>
           <li><strong>Terminal slots reuse numbers</strong> — close T1, open a new one, it&rsquo;s T1 again instead of T4</li>
+          <li><strong>App icon</strong></li>
           <li>Live activity on the departures board &mdash; each row shows what the agent is doing right now as it works</li>
+          <li>Departures board no longer shows stale active flights after restarting the app <span class="cl-fix">fix</span></li>
+          <li>Deploy sub-agent now correctly sends the task you typed <span class="cl-fix">fix</span></li>
           <li>HOLDING state sometimes stuck after approving a permission <span class="cl-fix">fix</span></li>
           <li>Splitting a terminal used to resume the wrong session <span class="cl-fix">fix</span></li>
         </ul>
@@ -1655,20 +1678,20 @@
 <section id="about">
   <div class="container">
 
-    <div class="eyebrow">About 050177</div>
+    <div class="eyebrow">About</div>
 
     <div class="about-split">
 
       <div class="about-story">
-        <h2 style="margin-bottom:26px;">Small team.<br>Real problem.</h2>
-        <p>050177 is a small self-funded team. We build tools to make our own work less chaotic, and occasionally those tools are good enough to share.</p>
-        <p>Ground Control started as a shell script. Then a cron job. Then a proper app. At some point we realised other people had the same problem &mdash; a dozen Claude sessions open, no way to know what any of them were doing without tabbing to each one.</p>
-        <p>We don&rsquo;t have investors, a growth team, or a product roadmap spreadsheet. We have a text file of things that annoy us and a habit of building the fix.</p>
+        <h2 style="margin-bottom:26px;">One dev.<br>Too many windows.</h2>
+        <p>Ground Control started because I was spending more time alt-tabbing between terminal windows than actually working. A dozen Claude sessions running at once, no idea which one was waiting on me, which one had finished, which one had gone off the rails.</p>
+        <p>It started as a shell script. Then a cron job. Then I got annoyed enough to build a proper app. Somewhere along the way the departures board idea came from a text file I was manually updating to track what each agent was doing &mdash; so I made the agents update it themselves.</p>
+        <p>No team, no investors, no roadmap spreadsheet. Just a list of things that waste my time and a habit of fixing them.</p>
       </div>
 
       <div class="about-quote">
-        <blockquote>We didn&rsquo;t set out to build a product. We set out to stop losing track of which Claude session was doing what. The departures board came from that &mdash; it was just a text file we were manually updating, so we made the agents update it themselves.</blockquote>
-        <cite>&mdash;&nbsp;050177</cite>
+        <blockquote>I didn&rsquo;t set out to build a product. I set out to stop alt-tabbing. The whole thing is just the fix I wish had already existed.</blockquote>
+        <cite>&mdash;&nbsp;the maker</cite>
       </div>
 
     </div>
@@ -1717,7 +1740,7 @@
   <div class="footer-inner">
     <div class="footer-brand">
       Ground Control
-      <span class="footer-maker">/ Built by <a href="#about" style="color:var(--muted);text-decoration:underline;text-underline-offset:3px;">050177</a></span>
+      <span class="footer-maker">/ open source &middot; free forever</span>
     </div>
     <ul class="footer-links">
       <li><a href="#how">How it works</a></li>

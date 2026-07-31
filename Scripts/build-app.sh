@@ -19,6 +19,9 @@ if [[ -f "$BIN_DIR/gc-mcp" ]]; then
     cp "$BIN_DIR/gc-mcp" "$APP/Contents/MacOS/gc-mcp"
 fi
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+if [[ -f Resources/AppIcon.icns ]]; then
+    cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+fi
 
 echo "▸ Signing (ad-hoc)…"
 # Inner binaries first, then the bundle.

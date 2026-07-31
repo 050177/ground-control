@@ -20,7 +20,16 @@ public final class BoardStore: @unchecked Sendable {
     public init(fileURL: URL? = nil) {
         self.fileURL = fileURL ?? ServerConfig.appSupportDirectory.appendingPathComponent("board.json")
         if let data = try? Data(contentsOf: self.fileURL),
-           let decoded = try? BoardStore.decoder.decode(Board.self, from: data) {
+           var decoded = try? BoardStore.decoder.decode(Board.self, from: data) {
+            // Flights that were active when the app quit have unknown outcomes — land them.
+            for idx in decoded.flights.indices {
+                switch decoded.flights[idx].status {
+                case .departed, .holding, .boarding, .scheduled:
+                    decoded.flights[idx].status = .landed
+                case .landed, .cancelled:
+                    break
+                }
+            }
             board = decoded
         } else {
             board = Board()

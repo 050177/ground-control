@@ -154,7 +154,7 @@ private struct SplitTaskPopover: View {
                 .foregroundStyle(Theme.landed)
                 .textFieldStyle(.plain)
                 .frame(width: 280)
-                .onSubmit(onDeploy)
+                .onSubmit { if !task.isEmpty { onDeploy() } }
 
             HStack {
                 Spacer()
