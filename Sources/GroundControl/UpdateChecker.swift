@@ -33,8 +33,7 @@ enum UpdateChecker {
            let assetURL = URL(string: rawURL) {
             downloadURL = assetURL
         } else {
-            let encoded = "Ground%20Control.zip"
-            downloadURL = URL(string: "https://github.com/050177/ground-control/releases/download/\(tag)/\(encoded)")!
+            downloadURL = URL(string: "https://github.com/050177/ground-control/releases/download/\(tag)/GroundControl.zip")!
         }
         return UpdateInfo(version: tag, url: releaseURL, downloadURL: downloadURL)
     }
