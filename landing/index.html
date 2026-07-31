@@ -1525,16 +1525,17 @@
           <span class="phase-title">Vision</span>
         </div>
         <div class="phase-right">
-          <span class="phase-badge ph-planned">PLANNED</span>
+          <span class="phase-badge" style="background:rgba(61,255,136,.12);color:var(--green);border-color:rgba(61,255,136,.28);">IN PROGRESS</span>
           <span class="ph-arrow">&#9654;</span>
         </div>
       </summary>
       <div class="phase-body">
         <ul class="phase-items">
+          <li>✓ Export session as markdown — one click from the terminal title bar</li>
+          <li>✓ Token and cost tracker — live per-session count in the title bar, per-model pricing</li>
+          <li>✓ Model badge — each terminal shows which model it&rsquo;s running</li>
           <li>Real-time diff viewer — watch agents edit files live</li>
           <li>Searchable session history per project</li>
-          <li>Export session as markdown</li>
-          <li>Token and cost tracker per session</li>
         </ul>
       </div>
     </details>
@@ -1610,6 +1611,21 @@
 
     <div class="eyebrow">Changelog</div>
     <h2>What&rsquo;s shipped.</h2>
+
+    <div class="cl-release">
+      <div class="cl-meta">
+        <span class="cl-ver">v0.4.0</span>
+        <span class="cl-date">July 2026</span>
+      </div>
+      <div>
+        <div class="cl-name">Visibility</div>
+        <ul class="cl-items">
+          <li><strong>Model badge</strong> — each terminal shows which model it&rsquo;s using right in the title bar, updates automatically if you switch mid-session with <code style="font-family:var(--mono);font-size:12px">/model</code></li>
+          <li><strong>Token &amp; cost tracker</strong> — running total of tokens used and estimated cost per session, shown in the title bar after each completed turn; uses per-model pricing so it&rsquo;s accurate across Opus, Sonnet, and Haiku</li>
+          <li><strong>Export session as markdown</strong> — click the export button in any terminal title bar to save the full conversation to your Desktop as a clean markdown file</li>
+        </ul>
+      </div>
+    </div>
 
     <div class="cl-release">
       <div class="cl-meta">

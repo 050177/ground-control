@@ -17,6 +17,10 @@ final class PaneModel: ObservableObject, Identifiable {
     @Published var cwd: String
     @Published var state: PaneState = .standby
     @Published var branch: String?
+    /// Path to the session JSONL transcript — set on first UserPromptSubmit.
+    @Published var transcriptPath: String?
+    /// Cumulative token usage + model for this session, refreshed after each Stop.
+    @Published var sessionUsage: SessionUsage?
 
     private let server: ServerConfig
     /// If set, claude is launched with --resume so the conversation continues.
@@ -121,6 +125,29 @@ final class PaneModel: ObservableObject, Identifiable {
     /// Type text into the terminal as if the user typed it (writes to stdin).
     func sendInput(_ text: String) {
         terminalView?.send(txt: text)
+    }
+
+    /// Export the session transcript as markdown to the Desktop and open it.
+    func exportSession() {
+        guard let path = transcriptPath else { return }
+        let markdown = TranscriptReader.exportMarkdown(path: path, label: label)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let date = formatter.string(from: Date())
+        let dest = NSHomeDirectory() + "/Desktop/\(label)-session-\(date).md"
+        try? markdown.write(toFile: dest, atomically: true, encoding: .utf8)
+        NSWorkspace.shared.open(URL(fileURLWithPath: dest))
+    }
+
+    /// Refresh token usage + model from the transcript on a background thread.
+    func refreshUsage() {
+        guard let path = transcriptPath else { return }
+        Task { [weak self] in
+            let usage = await Task.detached(priority: .utility) {
+                TranscriptReader.readUsage(path: path)
+            }.value
+            self?.sessionUsage = usage
+        }
     }
 
     /// Kill and relaunch the process in the same view.

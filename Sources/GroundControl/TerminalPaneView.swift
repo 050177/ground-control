@@ -42,10 +42,30 @@ struct TerminalPaneView: View {
             Text(pane.label)
                 .font(Theme.mono(11, weight: .bold))
                 .foregroundStyle(Theme.landed)
+            if let model = pane.sessionUsage?.shortModel {
+                Text(model)
+                    .font(Theme.mono(9))
+                    .foregroundStyle(Theme.dim)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Theme.hairline, lineWidth: 1))
+            }
             Text(pane.state.label)
                 .font(Theme.mono(10, weight: .medium))
                 .foregroundStyle(color(for: pane.state))
             Spacer()
+            if let usage = pane.sessionUsage, usage.totalTokens > 0 {
+                HStack(spacing: 4) {
+                    Text(usage.tokenLabel)
+                        .font(Theme.mono(9))
+                        .foregroundStyle(Theme.dim)
+                    if let cost = usage.costLabel {
+                        Text("· \(cost)")
+                            .font(Theme.mono(9))
+                            .foregroundStyle(Theme.dim)
+                    }
+                }
+            }
             if let branch = pane.branch {
                 Text("⎇ \(branch)")
                     .font(Theme.mono(10))
@@ -56,6 +76,12 @@ struct TerminalPaneView: View {
                 .foregroundStyle(Theme.dim)
                 .lineLimit(1)
                 .truncationMode(.head)
+            Button(action: { pane.exportSession() }) {
+                Image(systemName: "square.and.arrow.up")
+            }
+            .buttonStyle(TitleBarButtonStyle())
+            .help("Export session as markdown")
+            .disabled(pane.transcriptPath == nil)
             Button(action: { showSplitInput.toggle() }) {
                 Image(systemName: "rectangle.split.2x1")
                     .foregroundStyle(showSplitInput ? Theme.radar : Theme.dim)

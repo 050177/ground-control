@@ -454,12 +454,14 @@ final class AppState: ObservableObject {
             resumeActiveFlight(pane: pane)   // flip HOLDING → DEPARTED if stuck
             clearFlightActivity(pane: pane)
             autoFileFlight(pane: pane, message: event.message)
-            // transcript_path filename is the definitive resume UUID — use it if present.
-            // Skip for forks so sub-agents don't overwrite the parent project's session slot.
-            if !pane.isFork, let tp = event.transcriptPath {
-                let resumeId = URL(fileURLWithPath: tp).deletingPathExtension().lastPathComponent
-                if !resumeId.isEmpty {
-                    recentProjects.didStartSession(path: pane.cwd, sessionId: resumeId)
+            // transcript_path is the definitive resume UUID and the source for token/model data.
+            if let tp = event.transcriptPath {
+                pane.transcriptPath = tp
+                if !pane.isFork {
+                    let resumeId = URL(fileURLWithPath: tp).deletingPathExtension().lastPathComponent
+                    if !resumeId.isEmpty {
+                        recentProjects.didStartSession(path: pane.cwd, sessionId: resumeId)
+                    }
                 }
             }
         case "PreToolUse":
@@ -486,6 +488,7 @@ final class AppState: ObservableObject {
             pane.state = .landed
             clearFlightActivity(pane: pane)
             landActiveFlight(pane: pane)
+            pane.refreshUsage()
             appendChatter("\(pane.label) · LANDED")
             Notify.post(title: "\(pane.label) landed", body: "Agent finished its turn.")
         case "SessionEnd":
