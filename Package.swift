@@ -8,7 +8,7 @@ let package = Package(
         // Terminal emulator (no tagged releases — pinned by Package.resolved)
         .package(url: "https://github.com/migueldeicaza/SwiftTerm", branch: "main"),
         // Official MCP Swift SDK
-        .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", exact: "0.11.0"),
+        .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", from: "0.11.0"),
     ],
     targets: [
         .target(
