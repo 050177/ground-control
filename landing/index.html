@@ -1418,16 +1418,14 @@
         <span class="code-lang">BASH</span>
         <button class="copy-btn" id="copy-btn" onclick="copyCode()">COPY</button>
       </div>
-      <pre id="install-pre"><span class="c-comment"># install</span>
-<span class="c-cmd">brew</span> install --cask 050177/tap/ground-control
-
-<span class="c-comment"># update (run anytime)</span>
-<span class="c-cmd">brew</span> upgrade --cask ground-control</pre>
+      <pre id="install-pre"><span class="c-cmd">brew</span> tap 050177/tap
+<span class="c-cmd">brew</span> install --cask ground-control</pre>
     </div>
 
     <p style="font-size:0.82rem;color:var(--text-muted);margin-top:1.1rem;line-height:1.6;">
-      No Homebrew? <a href="https://brew.sh" style="color:var(--accent);">brew.sh</a> &mdash; or build from source:
-      <code style="font-size:0.8rem;opacity:.8;">git clone https://github.com/050177/ground-control &amp;&amp; Scripts/run.sh</code>
+      To update: <code style="font-size:0.8rem;opacity:.8;">brew upgrade --cask ground-control</code>
+      &nbsp;&middot;&nbsp;
+      No Homebrew? <a href="https://brew.sh" style="color:var(--accent);">brew.sh</a>
     </p>
 
     <div class="shortcuts">
