@@ -103,6 +103,11 @@ final class AppState: ObservableObject {
             resumeSessionId: sessionToResume,
             forkFromSessionId: forkFromSessionId
         )
+        pane.onTerminated = { [weak self, weak pane] in
+            guard let self, let pane else { return }
+            self.clearFlightActivity(pane: pane)
+            self.landActiveFlight(pane: pane)
+        }
         lastDirectory = directory
         panes.append(pane)
         selectedPaneId = pane.id
@@ -446,6 +451,7 @@ final class AppState: ObservableObject {
             }
         case "UserPromptSubmit":
             pane.state = .departed
+            resumeActiveFlight(pane: pane)   // flip HOLDING → DEPARTED if stuck
             clearFlightActivity(pane: pane)
             autoFileFlight(pane: pane, message: event.message)
             // transcript_path filename is the definitive resume UUID — use it if present.
@@ -484,6 +490,8 @@ final class AppState: ObservableObject {
             Notify.post(title: "\(pane.label) landed", body: "Agent finished its turn.")
         case "SessionEnd":
             pane.state = .dark
+            clearFlightActivity(pane: pane)
+            landActiveFlight(pane: pane)
             appendChatter("\(pane.label) · DARK — session ended")
         default:
             break

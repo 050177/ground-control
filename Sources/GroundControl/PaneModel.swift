@@ -31,6 +31,8 @@ final class PaneModel: ObservableObject, Identifiable {
     let isFork: Bool
     /// If set, sent as the first prompt once the session starts.
     var pendingTask: String?
+    /// Called on MainActor when the process exits — AppState uses this to land active flights.
+    var onTerminated: (() -> Void)?
     private var terminalView: LocalProcessTerminalView?
     private var claudePath: String?
 
@@ -160,9 +162,9 @@ final class PaneModel: ObservableObject, Identifiable {
 extension PaneModel: LocalProcessTerminalViewDelegate {
     nonisolated func processTerminated(source: TerminalView, exitCode: Int32?) {
         Task { @MainActor in
-            // A restart kills the old process; don't clobber the fresh state.
             guard self.state != .standby else { return }
             self.state = (exitCode ?? 0) == 0 ? .dark : .noContact
+            self.onTerminated?()
         }
     }
 

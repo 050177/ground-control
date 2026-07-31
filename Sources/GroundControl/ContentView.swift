@@ -5,6 +5,9 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
     @State private var showRecents = false
+    @State private var showUpdateConfirm = false
+    @State private var previewWidth: CGFloat = 440
+    @State private var previewDragBase: CGFloat = 440
 
     var body: some View {
         ZStack {
@@ -13,8 +16,9 @@ struct ContentView: View {
                 HStack(spacing: 0) {
                     TerminalGridView()
                     if appState.previewVisible {
+                        PreviewResizeHandle(width: $previewWidth, dragBase: $previewDragBase)
                         PreviewPanelView()
-                            .frame(width: 440)
+                            .frame(width: previewWidth)
                             .transition(.move(edge: .trailing))
                     }
                 }
@@ -98,7 +102,7 @@ struct ContentView: View {
             if let update = appState.pendingUpdate {
                 switch appState.updatePhase {
                 case .idle:
-                    Button(action: { appState.installUpdate() }) {
+                    Button(action: { showUpdateConfirm = true }) {
                         Text("UPDATE \(update.version)")
                             .font(Theme.mono(9, weight: .bold))
                             .foregroundStyle(Theme.bg)
@@ -108,7 +112,13 @@ struct ContentView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 3))
                     }
                     .buttonStyle(.plain)
-                    .help("Click to download and install \(update.version) — app will relaunch automatically")
+                    .help("Ground Control \(update.version) is available")
+                    .popover(isPresented: $showUpdateConfirm, arrowEdge: .bottom) {
+                        UpdateConfirmPopover(update: update) {
+                            showUpdateConfirm = false
+                            appState.installUpdate()
+                        }
+                    }
                 case .downloading:
                     Text("DOWNLOADING…")
                         .font(Theme.mono(9, weight: .bold))
@@ -235,6 +245,100 @@ private struct RecentsPopover: View {
             .buttonStyle(.plain)
         }
         .frame(width: 280)
+        .background(Theme.panel)
+    }
+}
+
+// MARK: - Preview panel resize handle
+
+private struct PreviewResizeHandle: View {
+    @Binding var width: CGFloat
+    @Binding var dragBase: CGFloat
+    @State private var hovering = false
+
+    var body: some View {
+        Rectangle()
+            .fill(hovering ? Theme.radar.opacity(0.45) : Theme.hairline)
+            .frame(width: 4)
+            .contentShape(Rectangle().inset(by: -4))
+            .onHover { h in
+                hovering = h
+                if h { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 1)
+                    .onChanged { v in
+                        // handle is at left edge of preview; drag left → wider, right → narrower
+                        width = max(240, min(1200, dragBase - v.translation.width))
+                    }
+                    .onEnded { v in
+                        dragBase = max(240, min(1200, dragBase - v.translation.width))
+                    }
+            )
+    }
+}
+
+// MARK: - Update confirmation popover
+
+private struct UpdateConfirmPopover: View {
+    let update: UpdateInfo
+    let onInstall: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    private var currentVersion: String {
+        "v" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("UPDATE AVAILABLE")
+                .font(Theme.mono(9, weight: .bold))
+                .foregroundStyle(Theme.dim)
+
+            HStack(spacing: 8) {
+                Text(currentVersion)
+                    .font(Theme.mono(13, weight: .bold))
+                    .foregroundStyle(Theme.dim)
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Theme.dim)
+                Text(update.version)
+                    .font(Theme.mono(13, weight: .bold))
+                    .foregroundStyle(Theme.radar)
+            }
+
+            Text("The app will download, replace itself, and relaunch automatically.")
+                .font(Theme.mono(10))
+                .foregroundStyle(Theme.dim)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 240)
+
+            HStack(spacing: 8) {
+                Button("Install now") { onInstall() }
+                    .buttonStyle(.plain)
+                    .font(Theme.mono(10, weight: .bold))
+                    .foregroundStyle(Theme.bg)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Theme.radar)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+
+                Button("Later") { dismiss() }
+                    .buttonStyle(.plain)
+                    .font(Theme.mono(10))
+                    .foregroundStyle(Theme.dim)
+
+                Spacer()
+
+                Button(action: { NSWorkspace.shared.open(update.url) }) {
+                    Text("Release notes ↗")
+                        .font(Theme.mono(9))
+                        .foregroundStyle(Theme.dim)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(16)
         .background(Theme.panel)
     }
 }
