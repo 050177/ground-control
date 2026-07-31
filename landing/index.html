@@ -1411,22 +1411,19 @@
 
     <div class="eyebrow">Install</div>
     <h2>Up in 30 seconds.</h2>
-    <p class="install-lead">Requires the Claude Code CLI. Install via Homebrew &mdash; no Gatekeeper warnings, auto-updates built in.</p>
+    <p class="install-lead">Requires the Claude Code CLI. One command &mdash; no Gatekeeper warnings, no extra steps.</p>
 
     <div class="code-block">
       <div class="code-header">
         <span class="code-lang">BASH</span>
         <button class="copy-btn" id="copy-btn" onclick="copyCode()">COPY</button>
       </div>
-      <pre id="install-pre"><span class="c-cmd">brew</span> tap 050177/tap
-<span class="c-cmd">brew</span> install --cask ground-control
-<span class="c-cmd">xattr</span> -dr com.apple.quarantine "/Applications/Ground Control.app"</pre>
+      <pre id="install-pre"><span class="c-cmd">curl</span> -fsSL https://raw.githubusercontent.com/050177/ground-control/main/Scripts/install.sh | bash</pre>
     </div>
 
     <p style="font-size:0.82rem;color:var(--text-muted);margin-top:1.1rem;line-height:1.6;">
-      To update: <code style="font-size:0.8rem;opacity:.8;">brew upgrade --cask ground-control</code>
-      &nbsp;&middot;&nbsp;
-      No Homebrew? <a href="https://brew.sh" style="color:var(--accent);">brew.sh</a>
+      Or via Homebrew: <code style="font-size:0.8rem;opacity:.8;">brew tap 050177/tap &amp;&amp; brew install --cask ground-control</code>
+      &nbsp;&middot;&nbsp; build from source: <code style="font-size:0.8rem;opacity:.8;">git clone https://github.com/050177/ground-control &amp;&amp; Scripts/run.sh</code>
     </p>
 
     <div class="shortcuts">
